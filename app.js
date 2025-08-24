@@ -320,7 +320,7 @@ async function exportYearPDF(){
   doc.setFont("helvetica","bold");
   doc.setFontSize(18);
   doc.setTextColor(brand[0],brand[1],brand[2]);
-  doc.text(`Resum anual ${yearStr} · deFang`, margin, margin + 24);
+  doc.text(`Resum anual ${yearStr}`, margin, margin + 24);
 
   // KPIs anuals sota el títol
   const incYear = state.incomeEntries.filter(e=>e.monthKey.startsWith(`${yearStr}-`)).reduce((s,e)=>s+(Number(e.price)||0),0);
