@@ -301,6 +301,13 @@ if (incomePayInput && payChips.length){
   // Nova plantilla
   $("#openIncomeTpl").addEventListener("click",()=>openTplDialog("ingres"));
   $("#openExpenseTpl").addEventListener("click",()=>openTplDialog("despesa"));
+// Cancel·lar nova plantilla sense validar
+const cancelTplBtn = document.getElementById("cancelTplBtn");
+if (cancelTplBtn){
+  cancelTplBtn.addEventListener("click", ()=>{
+    document.getElementById("tplDialog").close();
+  });
+}
 
   // Exportar Excel anual
   $("#exportExcelBtn").addEventListener("click", exportYearExcel);

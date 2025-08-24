@@ -84,8 +84,11 @@
               <label>Notes (opcional)</label>
               <textarea id="incomeNotes" rows="2" placeholder="Comentaris…"></textarea>
             </div>
-            <button class="btn primary" type="submit">Desar ingrés</button>
-          </form>
+<menu class="dialog-actions" style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+  <button type="button" class="btn subtle" id="incomeCancelBtn" formnovalidate>Cancel·lar</button>
+  <button class="btn primary" type="submit">Desar ingrés</button>
+</menu>
+              </form>
         </div>
 
         <div class="card">
@@ -236,7 +239,7 @@
         <input type="file" id="tplImage" accept="image/*" />
       </div>
       <menu class="dialog-actions">
-        <button class="btn subtle" value="cancel">Cancel·lar</button>
+<button class="btn subtle" id="cancelTplBtn" type="button">Cancel·lar</button>
         <button class="btn primary" id="saveTplBtn" value="default">Desar plantilla</button>
       </menu>
     </form>
