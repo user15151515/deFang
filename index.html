@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>deFang · Gestió</title>
+
+  <!-- Tipografia -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <!-- Posa el fitxer logo.png al mateix directori -->
+      <img src="assets/logo.png" alt="deFang" class="logo" width="120%">
+    </div>
+    <nav class="nav">
+              <button class="nav-btn" data-target="resum">Resum mensual</button>
+      <button class="nav-btn active" data-target="ingressos">Ingressos</button>
+      <button class="nav-btn" data-target="despeses">Despeses</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- INGRESOS -->
+    <section id="ingressos" class="view show">
+      <div class="section-header">
+        <h2>Ingressos</h2>
+        <label class="month-picker">
+          <span>Mes:</span>
+          <input type="month" id="monthIncome"/>
+        </label>
+      </div>
+
+      <div class="grid two">
+        <!-- Formulari nou ingrés -->
+        <div class="card">
+          <h3>Afegir ingrés</h3>
+          <form id="incomeForm" class="form">
+            <div class="form-row">
+              <label>Títol</label>
+              <input type="text" id="incomeTitle" placeholder="Ex: Encàrrec personalitzat" required />
+            </div>
+            <div class="form-row">
+              <label>Preu (€)</label>
+              <input type="number" id="incomePrice" step="0.01" min="0" placeholder="0,00" required />
+            </div>
+            <div class="form-row">
+              <label>Data</label>
+              <input type="date" id="incomeDate" required />
+            </div>
+            <div class="form-row">
+              <label>Notes (opcional)</label>
+              <textarea id="incomeNotes" rows="2" placeholder="Comentaris…"></textarea>
+            </div>
+            <button class="btn primary" type="submit">Desar ingrés</button>
+          </form>
+        </div>
+
+        <!-- Plantilles d’ingressos -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Plantilles d’ingressos</h3>
+            <button class="btn subtle" id="openIncomeTpl">+ Nova plantilla</button>
+          </div>
+          <div id="incomeTplList" class="tpl-list"></div>
+        </div>
+      </div>
+
+      <!-- Historial ingressos -->
+      <div class="card mt">
+        <div class="card-head">
+          <h3>Historial del mes</h3>
+          <div class="kpis">
+            <div class="kpi"><span>Total ingressos</span><strong id="incomeTotal">€0,00</strong></div>
+          </div>
+        </div>
+        <div id="incomeTableWrap" class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Títol</th><th>Preu</th><th>Notes</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="incomeTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESPESES -->
+    <section id="despeses" class="view">
+      <div class="section-header">
+        <h2>Despeses</h2>
+        <label class="month-picker">
+          <span>Mes:</span>
+          <input type="month" id="monthExpense"/>
+        </label>
+      </div>
+
+      <div class="grid two">
+        <!-- Formulari nova despesa -->
+        <div class="card">
+          <h3>Afegir despesa</h3>
+          <form id="expenseForm" class="form">
+            <div class="form-row">
+              <label>Concepte</label>
+              <input type="text" id="expenseTitle" placeholder="Ex: Fang grogós 10kg" required />
+            </div>
+            <div class="form-row">
+              <label>Import (€)</label>
+              <input type="number" id="expensePrice" step="0.01" min="0" placeholder="0,00" required />
+            </div>
+            <div class="form-row">
+              <label>Data</label>
+              <input type="date" id="expenseDate" required />
+            </div>
+            <div class="form-row">
+              <label>Notes (opcional)</label>
+              <textarea id="expenseNotes" rows="2" placeholder="Comentaris…"></textarea>
+            </div>
+            <button class="btn primary" type="submit">Desar despesa</button>
+          </form>
+        </div>
+
+        <!-- Plantilles de despeses -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Plantilles de despeses</h3>
+            <button class="btn subtle" id="openExpenseTpl">+ Nova plantilla</button>
+          </div>
+          <div id="expenseTplList" class="tpl-list"></div>
+        </div>
+      </div>
+
+      <!-- Historial despeses -->
+      <div class="card mt">
+        <div class="card-head">
+          <h3>Historial del mes</h3>
+          <div class="kpis">
+            <div class="kpi"><span>Total despeses</span><strong id="expenseTotal">€0,00</strong></div>
+          </div>
+        </div>
+        <div id="expenseTableWrap" class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Concepte</th><th>Import</th><th>Notes</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESUM -->
+    <section id="resum" class="view">
+      <div class="section-header">
+        <h2>Resum mensual</h2>
+        <label class="month-picker">
+          <span>Mes:</span>
+          <input type="month" id="monthSummary"/>
+        </label>
+      </div>
+
+      <div class="grid three">
+        <div class="card kpi-big">
+          <span>Ingressos</span>
+          <strong id="sumIncome">€0,00</strong>
+        </div>
+        <div class="card kpi-big">
+          <span>Despeses</span>
+          <strong id="sumExpense">€0,00</strong>
+        </div>
+        <div class="card kpi-big">
+          <span>Balanç</span>
+          <strong id="sumBalance">€0,00</strong>
+        </div>
+      </div>
+
+      <div class="hint">El balanç és <em>ingressos − despeses</em>.</div>
+    </section>
+  </main>
+
+  <!-- Diàleg: nova plantilla -->
+  <dialog id="tplDialog">
+    <form method="dialog" id="tplForm" class="form">
+      <h3 id="tplDialogTitle">Nova plantilla</h3>
+      <div class="form-row">
+        <label>Tipus</label>
+        <select id="tplType" required>
+          <option value="ingres">Ingrés</option>
+          <option value="despesa">Despesa</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Nom</label>
+        <input type="text" id="tplTitle" placeholder="Ex: Fang" required />
+      </div>
+      <div class="form-row">
+        <label>Preu base (€)</label>
+        <input type="number" id="tplPrice" step="0.01" min="0" placeholder="0,00" required />
+      </div>
+      <div class="form-row">
+        <label>Imatge (opcional)</label>
+        <input type="file" id="tplImage" accept="image/*" />
+      </div>
+      <menu class="dialog-actions">
+        <button class="btn subtle" value="cancel">Cancel·lar</button>
+        <button class="btn primary" id="saveTplBtn" value="default">Desar plantilla</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Diàleg: usar plantilla (confirmar preu i data) -->
+  <dialog id="useTplDialog">
+    <form method="dialog" id="useTplForm" class="form">
+      <h3 id="useTplTitle">Afegir des de plantilla</h3>
+      <div class="form-row">
+        <label>Preu (€)</label>
+        <input type="number" id="useTplPrice" step="0.01" min="0" required />
+      </div>
+      <div class="form-row">
+        <label>Data</label>
+        <input type="date" id="useTplDate" required />
+      </div>
+      <menu class="dialog-actions">
+        <button class="btn subtle" value="cancel">Cancel·lar</button>
+        <button class="btn primary" id="confirmUseTpl" value="default">Afegir</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- Firebase compat (NO modular) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <script src="app.js"></script>
+</body>
+</html>
