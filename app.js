@@ -517,31 +517,45 @@ function iconClay(){ return `<svg width="22" height="22" viewBox="0 0 24 24" fil
 function exportYearExcel(){
   const [yearStr] = state.activeMonth.split("-");
   const months = ["Gener","Febrer","Març","Abril","Maig","Juny","Juliol","Agost","Setembre","Octubre","Novembre","Desembre"];
+  const monthKey = (i) => `${yearStr}-${String(i+1).padStart(2,"0")}`;
 
-  // Resum per mesos
-  const rows = months.map((name, i) => {
-    const key = `${yearStr}-${String(i+1).padStart(2,"0")}`;
+  const wb = XLSX.utils.book_new();
+
+  // --- Full 1: Resum anual (per mesos) ---
+  const resumRows = months.map((name, i) => {
+    const key = monthKey(i);
     const inc = state.incomeEntries.filter(e=>e.monthKey===key).reduce((s,e)=>s+(Number(e.price)||0),0);
     const exp = state.expenseEntries.filter(e=>e.monthKey===key).reduce((s,e)=>s+(Number(e.price)||0),0);
     return { "Mes": name, "Ingressos": +(inc.toFixed(2)), "Despeses": +(exp.toFixed(2)), "Balanç": +((inc-exp).toFixed(2)) };
   });
-
-  const wb = XLSX.utils.book_new();
-  const wsResum = XLSX.utils.json_to_sheet(rows, { header:["Mes","Ingressos","Despeses","Balanç"] });
+  const wsResum = XLSX.utils.json_to_sheet(resumRows, { header:["Mes","Ingressos","Despeses","Balanç"] });
+  // Totals (fila 14 perquè hi ha 12 mesos + capçalera)
+  XLSX.utils.sheet_add_aoa(wsResum, [["TOTAL", { f:"SUM(B2:B13)" }, { f:"SUM(C2:C13)" }, { f:"SUM(D2:D13)" }]], { origin: "A14" });
+  wsResum["!cols"] = [{wch:12},{wch:14},{wch:14},{wch:14}];
+  wsResum["!autofilter"] = { ref: "A1:D13" };
   XLSX.utils.book_append_sheet(wb, wsResum, `Resum ${yearStr}`);
 
-  // Detall ingressos
+  // --- Full 2: Ingressos (detall, amb Mètode) ---
   const incDet = state.incomeEntries
     .filter(e=>e.monthKey.startsWith(`${yearStr}-`))
     .map(e=>({
       "Data": toDateInput(e.date.toDate?e.date.toDate():new Date(e.date)),
       "Títol": e.title,
+      "Mètode": e.paymentMethod === 'efectiu' ? 'Efectiu' : (e.paymentMethod === 'targeta' ? 'Targeta' : '—'),
       "Preu": +(Number(e.price||0).toFixed(2)),
       "Notes": e.notes || ""
     }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incDet), `Ingressos ${yearStr}`);
+  const wsInc = XLSX.utils.json_to_sheet(incDet, { header:["Data","Títol","Mètode","Preu","Notes"] });
+  const incLastRow = (incDet.length || 0) + 1;
+  if (incDet.length){
+    XLSX.utils.sheet_add_aoa(wsInc, [["TOTAL", "", "", { f:`SUM(D2:D${incLastRow})` }, ""]], { origin: `A${incLastRow+1}` });
+  }
+  wsInc["!cols"] = [{wch:12},{wch:38},{wch:12},{wch:12},{wch:40}];
+  wsInc["!autofilter"] = { ref: `A1:E${incLastRow}` };
+  XLSX.utils.book_append_sheet(wb, wsInc, `Ingressos ${yearStr}`);
 
-  // Detall despeses
+
+  // --- Full 4: Despeses (detall) ---
   const expDet = state.expenseEntries
     .filter(e=>e.monthKey.startsWith(`${yearStr}-`))
     .map(e=>({
@@ -550,11 +564,19 @@ function exportYearExcel(){
       "Import": +(Number(e.price||0).toFixed(2)),
       "Notes": e.notes || ""
     }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expDet), `Despeses ${yearStr}`);
+  const wsExp = XLSX.utils.json_to_sheet(expDet, { header:["Data","Concepte","Import","Notes"] });
+  const expLastRow = (expDet.length || 0) + 1;
+  if (expDet.length){
+    XLSX.utils.sheet_add_aoa(wsExp, [["TOTAL", "", { f:`SUM(C2:C${expLastRow})` }, ""]], { origin: `A${expLastRow+1}` });
+  }
+  wsExp["!cols"] = [{wch:12},{wch:38},{wch:12},{wch:40}];
+  wsExp["!autofilter"] = { ref: `A1:D${expLastRow}` };
+  XLSX.utils.book_append_sheet(wb, wsExp, `Despeses ${yearStr}`);
 
   XLSX.writeFile(wb, `deFang_${yearStr}.xlsx`);
   toast("Excel generat");
 }
+
 
 // ---- Setup bàsic ----
 async function ensurePackageDoc(){
