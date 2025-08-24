@@ -72,6 +72,15 @@
               <input type="date" id="incomeDate" required />
             </div>
             <div class="form-row">
+  <label>Mètode de pagament</label>
+  <div class="chips" id="incomePayChips">
+    <button type="button" class="chip opt" data-value="efectiu">Efectiu</button>
+    <button type="button" class="chip opt selected" data-value="targeta">Targeta</button>
+  </div>
+  <input type="hidden" id="incomePay" value="targeta" />
+</div>
+
+            <div class="form-row">
               <label>Notes (opcional)</label>
               <textarea id="incomeNotes" rows="2" placeholder="Comentaris…"></textarea>
             </div>
@@ -99,7 +108,7 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Data</th><th>Títol</th><th>Preu</th><th>Notes</th><th></th>
+          <th>Data</th><th>Títol</th><th>Preu</th><th>Mètode</th><th>Notes</th><th></th>
               </tr>
             </thead>
             <tbody id="incomeTableBody"></tbody>
@@ -152,7 +161,7 @@
         <div class="card-head">
           <h3>Historial del mes</h3>
           <div class="kpis">
-            <div class="kpi"><span>Total despeses</span><strong id="expenseTotal">€0,00</strong></div>
+            <div class="kpi"><span>Total despeses </span><strong id="expenseTotal">€0,00</strong></div>
           </div>
         </div>
         <div id="expenseTableWrap" class="table-wrap">

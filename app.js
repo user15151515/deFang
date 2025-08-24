@@ -80,31 +80,56 @@ function renderTemplates(list, containerEl, type){
   }
 }
 
-function renderEntries(list, tbodyEl, totalEl){
+function renderEntries(list, tbodyEl, totalEl, opts = {}) {
+  const showPay = !!opts.showPay; // només per ingressos
   tbodyEl.innerHTML = "";
   let total = 0;
-  if(!list.length){
-    tbodyEl.innerHTML = `<tr><td colspan="5" class="hint">Cap registre aquest mes.</td></tr>`;
-    totalEl.textContent = fmtEUR(0); return;
+
+  if (!list.length) {
+    const colspan = showPay ? 6 : 5;
+    tbodyEl.innerHTML = `<tr><td colspan="${colspan}" class="hint">Cap registre aquest mes.</td></tr>`;
+    totalEl.textContent = fmtEUR(0);
+    return;
   }
-  for(const it of list){
-    total += Number(it.price)||0;
+
+  for (const it of list) {
+    total += Number(it.price) || 0;
+
+    const dateTxt = toDateInput(it.date.toDate ? it.date.toDate() : new Date(it.date));
+    const titleTxt = escapeHtml(it.title);
+    const priceTxt = fmtEUR(it.price);
+    const notesTxt = escapeHtml(it.notes || "");
+    const payTxt = showPay
+      ? (it.paymentMethod === 'efectiu' ? 'Efectiu'
+         : it.paymentMethod === 'targeta' ? 'Targeta'
+         : '—')
+      : null;
+
+    const cells = [
+      `<td>${dateTxt}</td>`,
+      `<td>${titleTxt}</td>`,
+      `<td>${priceTxt}</td>`,
+      ...(showPay ? [`<td>${payTxt}</td>`] : []),
+      `<td>${notesTxt}</td>`,
+      `<td class="row-actions">
+         <button class="btn icon" data-action="edit" title="Editar">${iconEdit()}</button>
+         <button class="btn icon" data-action="del" title="Eliminar">${iconTrash()}</button>
+       </td>`
+    ].join("");
+
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${toDateInput(it.date.toDate?it.date.toDate():new Date(it.date))}</td>
-      <td>${escapeHtml(it.title)}</td>
-      <td>${fmtEUR(it.price)}</td>
-      <td>${escapeHtml(it.notes||"")}</td>
-      <td class="row-actions">
-        <button class="btn icon" data-action="edit" title="Editar">${iconEdit()}</button>
-        <button class="btn icon" data-action="del" title="Eliminar">${iconTrash()}</button>
-      </td>`;
-    tr.querySelector('[data-action="del"]').addEventListener("click",async()=>{
-      if(confirm("Vols eliminar aquest registre?")){ await itemsCol.doc(it.id).delete(); toast("Registre eliminat"); }
+    tr.innerHTML = cells;
+
+    tr.querySelector('[data-action="del"]').addEventListener("click", async () => {
+      if (confirm("Vols eliminar aquest registre?")) {
+        await itemsCol.doc(it.id).delete();
+        toast("Registre eliminat");
+      }
     });
-    tr.querySelector('[data-action="edit"]').addEventListener("click",()=>editEntry(it));
+    tr.querySelector('[data-action="edit"]').addEventListener("click", () => editEntry(it));
     tbodyEl.appendChild(tr);
   }
+
   totalEl.textContent = fmtEUR(total);
 }
 
@@ -118,7 +143,7 @@ function renderAllForActiveMonth(){
   // taules
   const incList = state.incomeEntries.filter(e=>e.monthKey===m);
   const expList = state.expenseEntries.filter(e=>e.monthKey===m);
-  renderEntries(incList, $("#incomeTableBody"), $("#incomeTotal"));
+renderEntries(incList, $("#incomeTableBody"), $("#incomeTotal"), { showPay: true });
   renderEntries(expList, $("#expenseTableBody"), $("#expenseTotal"));
 
   // resum
@@ -215,22 +240,38 @@ nextBtn.addEventListener("click", ()=>shiftMonth(+1));
   $("#incomeDate").value  = toDateInput(d);
   $("#expenseDate").value = toDateInput(d);
 
+  const incomePayInput = $("#incomePay"); // <input type="hidden" ...> al formulari
+const payChips = $$("#incomePayChips .chip.opt");
+if (incomePayInput && payChips.length){
+  payChips.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      payChips.forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      incomePayInput.value = btn.dataset.value; // 'efectiu' | 'targeta'
+    });
+  });
+}
+
   // Afegir ingrés
   $("#incomeForm").addEventListener("submit", async (ev)=>{
-    ev.preventDefault();
-    const title = $("#incomeTitle").value.trim();
-    const price = Number($("#incomePrice").value||0);
-    const dateStr = $("#incomeDate").value;
-    const notes = $("#incomeNotes").value.trim();
-    if(!title||!dateStr) return;
-    const date = new Date(dateStr);
-    await itemsCol.add({
-      kind:"ingres-entry", title, price,
-      date: firebase.firestore.Timestamp.fromDate(date),
-      monthKey: yyyyMM(date),
-      notes,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+  ev.preventDefault();
+  const title = $("#incomeTitle").value.trim();
+  const price = Number($("#incomePrice").value || 0);
+  const dateStr = $("#incomeDate").value;
+  const notes = $("#incomeNotes").value.trim();
+  const paymentMethod = $("#incomePay").value || "targeta"; // ✅ AFEGIT
+
+  if (!title || !dateStr) return;
+  const date = new Date(dateStr);
+  await itemsCol.add({
+    kind: "ingres-entry",
+    title, price,
+    date: firebase.firestore.Timestamp.fromDate(date),
+    monthKey: yyyyMM(date),
+    notes,
+    paymentMethod, // ✅ AFEGIT
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
     $("#incomeForm").reset();
     $("#incomeDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
     toast("Ingrés desat");
