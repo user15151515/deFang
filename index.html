@@ -5,38 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>deFang · Gestió</title>
 
-  <!-- Tipografia -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <!-- Posa el fitxer logo.png al mateix directori -->
-      <img src="assets/logo.png" alt="deFang" class="logo" width="120%">
+      <img src="assets/logo.png" alt="deFang" class="logo">
     </div>
     <nav class="nav">
-              <button class="nav-btn" data-target="resum">Resum mensual</button>
-      <button class="nav-btn active" data-target="ingressos">Ingressos</button>
+      <button class="nav-btn active" data-target="resum">Resum mensual</button>
+      <button class="nav-btn" data-target="ingressos">Ingressos</button>
       <button class="nav-btn" data-target="despeses">Despeses</button>
     </nav>
+<div class="header-month pretty">
+  <button id="prevMonth" class="chip-nav" aria-label="Mes anterior">‹</button>
+  <button id="activeMonthLabel" class="chip-month" type="button"></button>
+  <input type="month" id="activeMonthPicker" />
+  <button id="nextMonth" class="chip-nav" aria-label="Mes següent">›</button>
+</div>
+
   </header>
 
   <main class="container">
     <!-- INGRESOS -->
-    <section id="ingressos" class="view show">
+    <section id="ingressos" class="view">
       <div class="section-header">
-        <h2>Ingressos</h2>
-        <label class="month-picker">
-          <span>Mes:</span>
-          <input type="month" id="monthIncome"/>
-        </label>
+        <h2>Ingressos <span id="incomeChip" class="chip total">€0,00</span></h2>
+        <div class="month-banner">Mes actiu: <strong id="monthIncomeText"></strong></div>
       </div>
 
       <div class="grid two">
-        <!-- Formulari nou ingrés -->
         <div class="card">
           <h3>Afegir ingrés</h3>
           <form id="incomeForm" class="form">
@@ -60,7 +60,6 @@
           </form>
         </div>
 
-        <!-- Plantilles d’ingressos -->
         <div class="card">
           <div class="card-head">
             <h3>Plantilles d’ingressos</h3>
@@ -70,7 +69,6 @@
         </div>
       </div>
 
-      <!-- Historial ingressos -->
       <div class="card mt">
         <div class="card-head">
           <h3>Historial del mes</h3>
@@ -94,15 +92,11 @@
     <!-- DESPESES -->
     <section id="despeses" class="view">
       <div class="section-header">
-        <h2>Despeses</h2>
-        <label class="month-picker">
-          <span>Mes:</span>
-          <input type="month" id="monthExpense"/>
-        </label>
+        <h2>Despeses <span id="expenseChip" class="chip total">€0,00</span></h2>
+        <div class="month-banner">Mes actiu: <strong id="monthExpenseText"></strong></div>
       </div>
 
       <div class="grid two">
-        <!-- Formulari nova despesa -->
         <div class="card">
           <h3>Afegir despesa</h3>
           <form id="expenseForm" class="form">
@@ -126,7 +120,6 @@
           </form>
         </div>
 
-        <!-- Plantilles de despeses -->
         <div class="card">
           <div class="card-head">
             <h3>Plantilles de despeses</h3>
@@ -136,7 +129,6 @@
         </div>
       </div>
 
-      <!-- Historial despeses -->
       <div class="card mt">
         <div class="card-head">
           <h3>Historial del mes</h3>
@@ -158,13 +150,12 @@
     </section>
 
     <!-- RESUM -->
-    <section id="resum" class="view">
+    <section id="resum" class="view show">
       <div class="section-header">
         <h2>Resum mensual</h2>
-        <label class="month-picker">
-          <span>Mes:</span>
-          <input type="month" id="monthSummary"/>
-        </label>
+        <div class="actions-row">
+          <div class="month-banner">Mes actiu: <strong id="monthSummaryText"></strong></div>
+        </div>
       </div>
 
       <div class="grid three">
@@ -183,10 +174,15 @@
       </div>
 
       <div class="hint">El balanç és <em>ingressos − despeses</em>.</div>
+
+      <div class="export-row">
+  <button class="btn primary" id="exportExcelBtn">Exportar Excel</button>
+  <button class="btn primary" id="exportPdfBtn">Exportar PDF</button>
+</div>
     </section>
   </main>
 
-  <!-- Diàleg: nova plantilla -->
+  <!-- Diàlegs -->
   <dialog id="tplDialog">
     <form method="dialog" id="tplForm" class="form">
       <h3 id="tplDialogTitle">Nova plantilla</h3>
@@ -216,7 +212,6 @@
     </form>
   </dialog>
 
-  <!-- Diàleg: usar plantilla (confirmar preu i data) -->
   <dialog id="useTplDialog">
     <form method="dialog" id="useTplForm" class="form">
       <h3 id="useTplTitle">Afegir des de plantilla</h3>
@@ -235,13 +230,18 @@
     </form>
   </dialog>
 
-  <!-- Toast -->
   <div id="toast"></div>
 
-  <!-- Firebase compat (NO modular) -->
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <!-- SheetJS per exportar Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
+
 
   <script src="app.js"></script>
 </body>

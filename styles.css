@@ -4,7 +4,7 @@
   --ink:#2a2a2a;
   --muted:#6e6e6e;
   --line:#ece8e4;
-  --brand:#c96a4a;            /* terracota suau */
+  --brand:#c96a4a;
   --brand-weak:#f0d8cf;
   --ok:#2e7d32;
   --warn:#c62828;
@@ -19,17 +19,20 @@ img{max-width:100%;display:block}
 .topbar{
   position:sticky;top:0;z-index:10;
   display:flex;align-items:center;justify-content:space-between;
-  gap:16px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);
+  gap:16px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);
 }
 .brand{display:flex;align-items:center;gap:12px}
-.logo{height:36px;object-fit:contain}
+.logo{height:56px;object-fit:contain} /* LOGO MÉS GRAN */
 
 .nav{display:flex;gap:8px;flex-wrap:wrap}
 .nav-btn{
   appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
-  padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:600;
+  padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:600
 }
 .nav-btn.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+.header-month{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.header-month input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
 
 .container{max-width:1100px;margin:24px auto;padding:0 16px}
 .view{display:none}
@@ -38,8 +41,8 @@ img{max-width:100%;display:block}
 .section-header{
   display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px
 }
-.month-picker{display:flex;align-items:center;gap:8px;color:var(--muted)}
-.month-picker input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.month-banner{color:var(--muted)}
+.month-banner strong{color:var(--ink)}
 
 .grid{display:grid;gap:16px}
 .grid.two{grid-template-columns:1fr 1fr}
@@ -65,15 +68,15 @@ img{max-width:100%;display:block}
 }
 .btn.primary{background:var(--brand);color:#fff}
 .btn.subtle{background:var(--brand-weak);color:var(--ink);border:1px solid var(--brand)}
-.btn.icon{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--line);background:#fff}
+.btn.icon{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border:1px solid var(--line);background:#fff}
 
 .kpis{display:flex;gap:10px;flex-wrap:wrap}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .kpi span{color:var(--muted);font-size:12px}
 .kpi strong{font-size:18px}
 
-.kpi-big{display:grid;gap:6px;place-items:center}
-.kpi-big span{color:var(--muted)}
+.kpi-big{display:grid;gap:6px;place-items:center;border: 4px solid var(--brand)}
+.kpi-big span{color:var(--ink)}
 .kpi-big strong{font-size:28px}
 
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
@@ -111,3 +114,58 @@ dialog .form{padding:16px}
   background:#111;color:#fff;padding:10px 14px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:50
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+.actions-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.chip.total{
+  display:inline-block;
+  margin-left:8px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:var(--brand-weak);
+  border:1px solid var(--brand);
+  font-weight:600;
+  font-size:14px;
+}
+.header-month.pretty{display:flex;align-items:center;gap:8px}
+.header-month.pretty input{
+  position:absolute; opacity:0; width:0; height:0; pointer-events:none;
+}
+.chip-month{
+  padding:8px 12px; border-radius:999px; border:1px solid var(--line);
+  background:#fff; cursor:pointer; font-weight:600;
+}
+.chip-month:focus{outline:2px solid var(--brand-weak)}
+.chip-nav{
+  width:36px; height:36px; border-radius:999px; border:1px solid var(--line);
+  background:#fff; cursor:pointer; font-weight:700; line-height:1;
+}
+.export-row{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:600px){.export-row .btn{width:100%}}
+/* Navegació com a xips desplaçables */
+@media (max-width:700px){
+  .nav{overflow-x:auto; -webkit-overflow-scrolling:touch; gap:6px}
+  .nav-btn{flex:0 0 auto; padding:10px 12px}
+  .container{padding:0 12px}
+  .logo{height:48px}
+  .chip-month, .chip-nav{padding:10px 14px}
+}
+
+/* Taules més netes en pantalles petites: amaguem Notes i comprimim espai */
+@media (max-width:600px){
+  .table th:nth-child(4), .table td:nth-child(4){display:none} /* Notes */
+  .table th,.table td{padding:8px 10px; font-size:14px}
+  .row-actions .btn{padding:8px 10px}
+}
+
+/* Formularis més còmodes al mòbil */
+@media (max-width:600px){
+  .form-row input,.form-row select,.form-row textarea{padding:12px}
+  .btn{padding:12px 16px}
+  .kpi strong{font-size:16px}
+  .kpi-big strong{font-size:24px}
+}
+
+/* Selector de mes: millor ús d'espai */
+@media (max-width:520px){
+  .header-month.pretty{gap:6px}
+  .chip-nav{width:34px;height:34px}
+}
