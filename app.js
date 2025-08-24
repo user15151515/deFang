@@ -14,6 +14,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
+const auth = firebase.auth();
+let isAuthed = false;
 
 // Col·lecció segons rules
 const PKG_ID = "defang";
@@ -71,6 +73,7 @@ function renderTemplates(list, containerEl, type){
       </div>`;
     el.querySelector('[data-action="use"]').addEventListener("click",()=>openUseTplDialog(t,type));
     el.querySelector('[data-action="del"]').addEventListener("click",async()=>{
+      
       if(confirm("Vols eliminar aquesta plantilla?")){ await itemsCol.doc(t.id).delete(); toast("Plantilla eliminada"); }
     });
     containerEl.appendChild(el);
@@ -136,6 +139,13 @@ document.getElementById("expenseChip").textContent = fmtEUR(exp);
 
   // header picker en sincronia
   $("#activeMonthPicker").value = m;
+  // Actualitza el badge d'any al costat dels botons d'exportació
+const yrBadge = document.getElementById("exportYearBadge");
+if (yrBadge) {
+  const [yr] = m.split("-");
+  yrBadge.textContent = `ANY ${yr}`;
+}
+
   const label = document.getElementById("activeMonthLabel");
 if (label) label.textContent = formatMonth(m);
 }
@@ -167,6 +177,8 @@ function subscribeEntries(){
       state.expenseEntries = s.docs.map(d=>({id:d.id,...d.data()}));
       renderAllForActiveMonth();
     });
+
+  
 }
 
 // ---- Formularis ----
@@ -253,21 +265,26 @@ nextBtn.addEventListener("click", ()=>shiftMonth(+1));
   $("#exportExcelBtn").addEventListener("click", exportYearExcel);
 
   document.getElementById("exportPdfBtn").addEventListener("click", exportYearPDF);
-  async function getLogoDataURL(){
-  // Carrega logo.png i retorna dataURL (si falla, retorna null)
+async function getLogoDataURL(){
   return new Promise((resolve)=>{
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      const c = document.createElement("canvas");
-      c.width = img.width; c.height = img.height;
-      c.getContext("2d").drawImage(img,0,0);
-      resolve(c.toDataURL("image/png"));
+      try {
+        const c = document.createElement("canvas");
+        c.width = img.width; c.height = img.height;
+        c.getContext("2d").drawImage(img,0,0);
+        resolve(c.toDataURL("image/png"));
+      } catch (e) {
+        // canvas “tainted” → seguim sense logo
+        resolve(null);
+      }
     };
     img.onerror = () => resolve(null);
-    img.src = "logo.png";
+    img.src = "assets/logo.png";
   });
 }
+
 
 function eur(n){ return (Number(n)||0).toFixed(2).replace('.',',') + " €"; }
 
@@ -318,6 +335,28 @@ async function exportYearPDF(){
 
   doc.save(`deFang_${yearStr}.pdf`);
   toast("PDF generat");
+}
+// LOGIN
+const loginForm = document.getElementById("loginForm");
+if (loginForm){
+  loginForm.addEventListener("submit", async (ev)=>{
+    ev.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const pass  = document.getElementById("loginPassword").value;
+    const errEl = document.getElementById("loginError");
+    errEl.textContent = "";
+    try{
+      await auth.signInWithEmailAndPassword(email, pass);
+    }catch(e){
+      errEl.textContent = "Credencials incorrectes o usuari inexistent.";
+    }
+  });
+}
+
+// LOGOUT
+const logoutBtn = document.getElementById("logoutBtn");
+if (logoutBtn){
+  logoutBtn.addEventListener("click", ()=> auth.signOut());
 }
 
 
@@ -479,11 +518,42 @@ async function init(){
   
   setupNav();
   setupForms();
-  await ensurePackageDoc();
-  subscribeTemplates();
-  subscribeEntries();
-  renderAllForActiveMonth(); // inicial
-  // Obrir "Resum" per defecte
+  // Oculta la UI principal fins a login
+document.querySelector("main.container").style.display = "none";
+document.getElementById("loginView").style.display = "grid";
+
+// Escolta canvis d'autenticació
+auth.onAuthStateChanged((user)=>{
+  isAuthed = !!user;
+  if (isAuthed){
+    // Mostra app
+    document.getElementById("loginView").style.display = "none";
+    document.querySelector("main.container").style.display = "block";
+
+    // Inicia subscripcions (un cop logats)
+    subscribeTemplates();
+    subscribeEntries();
+    renderAllForActiveMonth();
+    toast(`Benvingut/da, ${user.email}`);
+  } else {
+    // Des-subscriu si cal
+    if (unsub.incomeTpl) unsub.incomeTpl();
+    if (unsub.expenseTpl) unsub.expenseTpl();
+    if (unsub.incomeEntries) unsub.incomeEntries();
+    if (unsub.expenseEntries) unsub.expenseEntries();
+    unsub = { incomeTpl:null, expenseTpl:null, incomeEntries:null, expenseEntries:null };
+
+    // Buida estat visible
+    state.incomeTpls = []; state.expenseTpls = [];
+    state.incomeEntries = []; state.expenseEntries = [];
+    renderAllForActiveMonth();
+
+    // Torna al login
+    document.querySelector("main.container").style.display = "none";
+    document.getElementById("loginView").style.display = "grid";
+  }
+});
+
 
   toast("Dades carregades");
 }

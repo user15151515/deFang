@@ -26,7 +26,26 @@
   <button id="nextMonth" class="chip-nav" aria-label="Mes següent">›</button>
 </div>
 
+
   </header>
+<!-- Panell de login (mostra per defecte fins que hi ha sessió) -->
+<section id="loginView" class="login-view">
+  <div class="login-card">
+    <h2>Accés privat</h2>
+    <form id="loginForm" class="form">
+      <div class="form-row">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="form-row">
+        <label>Contrasenya</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <button class="btn primary" type="submit">Entrar</button>
+      <div id="loginError" class="hint" style="color:#c62828"></div>
+    </form>
+  </div>
+</section>
 
   <main class="container">
     <!-- INGRESOS -->
@@ -73,7 +92,7 @@
         <div class="card-head">
           <h3>Historial del mes</h3>
           <div class="kpis">
-            <div class="kpi"><span>Total ingressos</span><strong id="incomeTotal">€0,00</strong></div>
+            <div class="kpi"><span>Total ingressos </span><strong id="incomeTotal">€0,00</strong></div>
           </div>
         </div>
         <div id="incomeTableWrap" class="table-wrap">
@@ -176,6 +195,8 @@
       <div class="hint">El balanç és <em>ingressos − despeses</em>.</div>
 
       <div class="export-row">
+          <span id="exportYearBadge" class="chip year"></span> <!-- AFEGIT -->
+
   <button class="btn primary" id="exportExcelBtn">Exportar Excel</button>
   <button class="btn primary" id="exportPdfBtn">Exportar PDF</button>
 </div>
@@ -231,11 +252,14 @@
   </dialog>
 
   <div id="toast"></div>
+<button id="logoutBtn" class="fab-logout" title="Sortir">Log out</button>
 
   <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
   <!-- SheetJS per exportar Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
