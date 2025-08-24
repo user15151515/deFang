@@ -289,10 +289,9 @@ async function getLogoDataURL(){
 function eur(n){ return (Number(n)||0).toFixed(2).replace('.',',') + " €"; }
 
 async function exportYearPDF(){
+  // Any actiu i files de la taula
   const [yearStr] = state.activeMonth.split("-");
   const months = ["Gener","Febrer","Març","Abril","Maig","Juny","Juliol","Agost","Setembre","Octubre","Novembre","Desembre"];
-
-  // Dades resum
   const rows = months.map((name,i)=>{
     const key = `${yearStr}-${String(i+1).padStart(2,"0")}`;
     const inc = state.incomeEntries.filter(e=>e.monthKey===key).reduce((s,e)=>s+(Number(e.price)||0),0);
@@ -300,32 +299,46 @@ async function exportYearPDF(){
     return [name, eur(inc), eur(exp), eur(inc-exp)];
   });
 
-  const { jsPDF } = window.jspdf;
+  // Crea el PDF
+  const { jsPDF } = window.jspdf || {};
+  if (!jsPDF) { alert("jsPDF no carregat. Revisa els <script> de jspdf i autotable."); return; }
   const doc = new jsPDF({ unit:"pt", format:"a4" });
-  const brand = [201,106,74]; // terracota
+
+  // Estil i marges
+  const brand  = [201,106,74]; // terracota
   const margin = 40;
 
-  // Capçalera amb logo
-  const logo = await getLogoDataURL();
-  if (logo) doc.addImage(logo, "PNG", margin, margin, 120, 44);
+  // Logo (si està disponible)
+  const logo = await getLogoDataURL(); // ja la tens definida a dalt
+  const pageW = doc.internal.pageSize.getWidth();
+  const logoW = 120, logoH = 44;
 
-  doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(brand[0],brand[1],brand[2]);
-  doc.text(`Resum anual ${yearStr} · deFang`, margin, logo ? margin+70 : margin+20);
+  // Logo a dalt a la dreta
+  if (logo) doc.addImage(logo, "PNG", pageW - margin - logoW, margin, logoW, logoH);
 
-  // KPIs (any)
+  // Títol a l'esquerra
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(18);
+  doc.setTextColor(brand[0],brand[1],brand[2]);
+  doc.text(`Resum anual ${yearStr} · deFang`, margin, margin + 24);
+
+  // KPIs anuals sota el títol
   const incYear = state.incomeEntries.filter(e=>e.monthKey.startsWith(`${yearStr}-`)).reduce((s,e)=>s+(Number(e.price)||0),0);
   const expYear = state.expenseEntries.filter(e=>e.monthKey.startsWith(`${yearStr}-`)).reduce((s,e)=>s+(Number(e.price)||0),0);
   const balYear = incYear - expYear;
 
-  doc.setFont("helvetica","normal"); doc.setFontSize(12); doc.setTextColor(60);
-  const yKPIs = (logo ? margin+95 : margin+45);
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(12);
+  doc.setTextColor(60);
+  const yKPIs = margin + 40;
   doc.text(`Ingressos: ${eur(incYear)}   ·   Despeses: ${eur(expYear)}   ·   Balanç: ${eur(balYear)}`, margin, yKPIs);
 
-  // Taula mensual (autotable)
+  // Taula (comença sota títol i sota logo)
+  const startY = Math.max(yKPIs + 16, margin + logoH + 16);
   doc.autoTable({
     head: [["Mes","Ingressos","Despeses","Balanç"]],
     body: rows,
-    startY: yKPIs + 16,
+    startY,
     styles: { halign: 'right', font: 'helvetica', fontSize: 11 },
     headStyles: { fillColor: brand, halign:'center', valign:'middle', fontStyle:'bold', textColor: 255 },
     columnStyles: { 0: { halign: 'left' } },
@@ -336,6 +349,8 @@ async function exportYearPDF(){
   doc.save(`deFang_${yearStr}.pdf`);
   toast("PDF generat");
 }
+
+
 // LOGIN
 const loginForm = document.getElementById("loginForm");
 if (loginForm){
