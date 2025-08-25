@@ -71,13 +71,34 @@ function renderTemplates(list, containerEl, type){
         <button class="btn icon" data-action="use">Usar</button>
         <button class="btn icon" data-action="del">Eliminar</button>
       </div>`;
-    el.querySelector('[data-action="use"]').addEventListener("click",()=>openUseTplDialog(t,type));
+el.querySelector('[data-action="use"]').addEventListener("click",()=>applyTemplateToForm(t,type));
+
+
     el.querySelector('[data-action="del"]').addEventListener("click",async()=>{
       
       if(confirm("Vols eliminar aquesta plantilla?")){ await itemsCol.doc(t.id).delete(); toast("Plantilla eliminada"); }
     });
     containerEl.appendChild(el);
   }
+  const stripEl = (type === "ingres") ? $("#incomeTplStrip") : $("#expenseTplStrip");
+if (stripEl){
+  stripEl.innerHTML = "";
+  if (!list.length){
+    stripEl.innerHTML = `<div class="hint">Sense plantilles.</div>`;
+  } else {
+    for (const t of list){
+      const pill = document.createElement("button");
+      pill.className = "tpl-pill";
+      pill.innerHTML = `
+        <span class="thumb">${t.imageUrl ? `<img src="${t.imageUrl}" alt="">` : iconClay()}</span>
+        <span class="txt">${escapeHtml(t.title)}</span>
+        <span class="price">${fmtEUR(t.defaultPrice)}</span>
+      `;
+      pill.addEventListener("click", ()=> applyTemplateToForm(t, type));
+      stripEl.appendChild(pill);
+    }
+  }
+}
 }
 
 function renderEntries(list, tbodyEl, totalEl, opts = {}) {
@@ -251,6 +272,33 @@ if (incomePayInput && payChips.length){
     });
   });
 }
+// Plegable mòbil: income
+const incT = document.getElementById("incomeFormToggle");
+const incF = document.getElementById("incomeForm");
+if (incT && incF){
+  incT.addEventListener("click", ()=>{
+    incF.classList.toggle("open");
+    incT.classList.toggle("expanded");
+  });
+}
+
+// Plegable mòbil: expense
+const expT = document.getElementById("expenseFormToggle");
+const expF = document.getElementById("expenseForm");
+if (expT && expF){
+  expT.addEventListener("click", ()=>{
+    expF.classList.toggle("open");
+    expT.classList.toggle("expanded");
+  });
+}
+
+// (opcional) Botó Cancel·lar d’ingrés tanca el formulari al mòbil
+document.getElementById("incomeCancelBtn")?.addEventListener("click", ()=>{
+  if (window.matchMedia("(max-width:700px)").matches){
+    incF?.classList.remove("open");
+    incT?.classList.remove("expanded");
+  }
+});
 
   // Afegir ingrés
   $("#incomeForm").addEventListener("submit", async (ev)=>{
@@ -275,6 +323,8 @@ if (incomePayInput && payChips.length){
     $("#incomeForm").reset();
     $("#incomeDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
     toast("Ingrés desat");
+    const incT = document.getElementById("incomeFormToggle");
+
   });
 
   // Afegir despesa
@@ -296,6 +346,7 @@ if (incomePayInput && payChips.length){
     $("#expenseForm").reset();
     $("#expenseDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
     toast("Despesa desada");
+
   });
 
   // Nova plantilla
@@ -331,6 +382,8 @@ async function getLogoDataURL(){
     img.onerror = () => resolve(null);
     img.src = "assets/logo.png";
   });
+
+  
 }
 
 
@@ -462,36 +515,33 @@ async function saveTemplate(){
   $("#tplDialog").close();
   toast("Plantilla desada");
 }
-
-let _tplToUse = null;
-function openUseTplDialog(tpl,type){
-  _tplToUse = { tpl, type };
-  $("#useTplTitle").textContent = `Afegir ${type==="ingres"?"ingrés":"despesa"}: ${tpl.title}`;
-  $("#useTplPrice").value = (tpl.defaultPrice ?? 0);
-  $("#useTplDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
-  $("#useTplDialog").showModal();
-  $("#confirmUseTpl").onclick = async (e)=>{ e.preventDefault(); await confirmUseTpl(); };
+function applyTemplateToForm(tpl, type){
+  const when = toDateInput(dateInsideActiveMonth(state.activeMonth));
+  if (type === 'ingres'){
+    goToView('ingressos');
+    $("#incomeTitle").value = tpl.title || '';
+    $("#incomePrice").value = tpl.defaultPrice ?? 0;
+    $("#incomeDate").value  = when;
+    // si vols per defecte 'targeta' als xips:
+    if ($("#incomePay")) $("#incomePay").value = $("#incomePay").value || "targeta";
+    $("#incomeNotes").focus();
+    toast('Plantilla carregada al formulari d’ingrés');
+    if (window.matchMedia("(max-width:700px)").matches){
+  document.getElementById("incomeForm")?.classList.add("open");
+  document.getElementById("incomeFormToggle")?.classList.add("expanded");
 }
-
-async function confirmUseTpl(){
-  if(!_tplToUse) return;
-  const price = Number($("#useTplPrice").value||0);
-  const date  = new Date($("#useTplDate").value);
-  const { tpl, type } = _tplToUse;
-
-  await itemsCol.add({
-    kind: type==="ingres" ? "ingres-entry" : "despesa-entry",
-    title: tpl.title,
-    price,
-    date: firebase.firestore.Timestamp.fromDate(date),
-    monthKey: yyyyMM(date),
-    templateId: tpl.id,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  $("#useTplDialog").close();
-  _tplToUse = null;
-  toast(`${type==="ingres"?"Ingrés":"Despesa"} afegit des de plantilla`);
+  } else {
+    goToView('despeses');
+    $("#expenseTitle").value = tpl.title || '';
+    $("#expensePrice").value = tpl.defaultPrice ?? 0;
+    $("#expenseDate").value  = when;
+    $("#expenseNotes").focus();
+    toast('Plantilla carregada al formulari de despesa');
+    if (window.matchMedia("(max-width:700px)").matches){
+  document.getElementById("expenseForm")?.classList.add("open");
+  document.getElementById("expenseFormToggle")?.classList.add("expanded");
+}
+  }
 }
 
 // ---- Editar registre ----
@@ -586,6 +636,50 @@ async function ensurePackageDoc(){
 }
 
 // ---- Navegació ----
+
+function setupMobileMenu(){
+  const btn = document.getElementById("menuBtn");
+  const panel = document.getElementById("mobileMenu");
+  const backdrop = document.getElementById("menuBackdrop");
+  if (!btn || !panel || !backdrop) return;
+
+  const navTo = (target) => {
+    // usa el teu helper si el tens; sinó, fem clic al botó de la nav clàssica
+    const desktopBtn = document.querySelector(`.nav-btn[data-target="${target}"]`);
+    if (typeof goToView === 'function') goToView(target);
+    else if (desktopBtn) desktopBtn.click();
+  };
+
+  const open = () => {
+    panel.hidden = false; backdrop.hidden = false;
+    btn.setAttribute("aria-expanded","true");
+    document.addEventListener("keydown", onKey);
+  };
+  const close = () => {
+    panel.hidden = true; backdrop.hidden = true;
+    btn.setAttribute("aria-expanded","false");
+    document.removeEventListener("keydown", onKey);
+  };
+  const toggle = () => panel.hidden ? open() : close();
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+
+  btn.addEventListener("click", toggle);
+  backdrop.addEventListener("click", close);
+
+  panel.querySelectorAll(".mobile-item").forEach(item=>{
+    item.addEventListener("click", ()=>{
+      const target = item.getAttribute("data-target");
+      navTo(target);
+      close();
+    });
+  });
+
+  // Si canvia la vista per altres motius, tanquem el menú
+  document.querySelectorAll(".nav-btn").forEach(b=>{
+    b.addEventListener("click", ()=> close());
+  });
+}
+
 function setupNav(){
   $$(".nav-btn").forEach(btn=>{
     btn.addEventListener("click",()=>{
@@ -597,12 +691,24 @@ function setupNav(){
     });
   });
 }
+function goToView(id){
+  const btn = document.querySelector(`.nav-btn[data-target="${id}"]`);
+  if (btn) btn.click();
+}
+
+
+
+// --- també omple la vista "tira" al mòbil ---
+
+
 
 // ---- Inici ----
 async function init(){
   
   setupNav();
   setupForms();
+  setupMobileMenu();
+
   // Oculta la UI principal fins a login
 document.querySelector("main.container").style.display = "none";
 document.getElementById("loginView").style.display = "grid";

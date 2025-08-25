@@ -27,6 +27,20 @@
   <button id="nextMonth" class="chip-nav" aria-label="Mes següent">›</button>
 </div>
 
+<!-- Botó hamburguesa (mòbil) -->
+<button id="menuBtn" class="hamburger" aria-label="Menú" aria-haspopup="true" aria-expanded="false" aria-controls="mobileMenu">
+  <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+</button>
+
+<!-- Menú desplegable (mòbil) -->
+<div id="mobileMenu" class="mobile-menu" hidden>
+  <button class="mobile-item" data-target="resum">Resum mensual</button>
+  <button class="mobile-item" data-target="ingressos">Ingressos</button>
+  <button class="mobile-item" data-target="despeses">Despeses</button>
+</div>
+<div id="menuBackdrop" class="menu-backdrop" hidden></div>
+
+
 
   </header>
 <!-- Panell de login (mostra per defecte fins que hi ha sessió) -->
@@ -58,8 +72,11 @@
 
       <div class="grid two">
         <div class="card">
-          <h3>Afegir ingrés</h3>
-          <form id="incomeForm" class="form">
+          <h3 id="afegiringrestitul">Afegir ingrés</h3>
+          <button type="button" id="incomeFormToggle" class="collapse-toggle">Afegir ingrés <span class="caret"></span></button>
+
+            <form id="incomeForm" class="form" data-collapsible="mobile">
+
             <div class="form-row">
               <label>Títol</label>
               <input type="text" id="incomeTitle" placeholder="Ex: Encàrrec personalitzat" required />
@@ -98,6 +115,8 @@
             <button class="btn subtle" id="openIncomeTpl">+ Nova plantilla</button>
           </div>
           <div id="incomeTplList" class="tpl-list"></div>
+          <div id="incomeTplStrip" class="tpl-strip"></div>
+
         </div>
       </div>
 
@@ -130,8 +149,11 @@
 
       <div class="grid two">
         <div class="card">
-          <h3>Afegir despesa</h3>
-          <form id="expenseForm" class="form">
+          <h3 id="afegirdespesatitul">Afegir despesa</h3>
+          <button type="button" id="expenseFormToggle" class="collapse-toggle">Afegir despesa <span class="caret"></span></button>
+
+            <form id="expenseForm" class="form" data-collapsible="mobile">
+
             <div class="form-row">
               <label>Concepte</label>
               <input type="text" id="expenseTitle" placeholder="Ex: Fang grogós 10kg" required />
@@ -158,6 +180,8 @@
             <button class="btn subtle" id="openExpenseTpl">+ Nova plantilla</button>
           </div>
           <div id="expenseTplList" class="tpl-list"></div>
+          <div id="expenseTplStrip" class="tpl-strip"></div>
+
         </div>
       </div>
 
@@ -205,7 +229,6 @@
         </div>
       </div>
 
-      <div class="hint">El balanç és <em>ingressos − despeses</em>.</div>
 
       <div class="export-row">
           <span id="exportYearBadge" class="chip year"></span> <!-- AFEGIT -->

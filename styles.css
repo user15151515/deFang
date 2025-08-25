@@ -47,7 +47,6 @@ img{max-width:100%;display:block}
 .grid{display:grid;gap:16px}
 .grid.two{grid-template-columns:1fr 1fr}
 .grid.three{grid-template-columns:repeat(3,1fr)}
-@media (max-width:900px){.grid.two,.grid.three{grid-template-columns:1fr}}
 
 .card{
   background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -150,36 +149,10 @@ dialog .form{padding:16px}
   letter-spacing:.02em;
 }
 
-@media (max-width:600px){.export-row .btn{width:100%}}
-/* Navegació com a xips desplaçables */
-@media (max-width:700px){
-  .nav{overflow-x:auto; -webkit-overflow-scrolling:touch; gap:6px}
-  .nav-btn{flex:0 0 auto; padding:10px 12px}
-  .container{padding:0 12px}
-  .logo{height:48px}
-  .chip-month, .chip-nav{padding:10px 14px}
-}
 
-/* Taules més netes en pantalles petites: amaguem Notes i comprimim espai */
-@media (max-width:600px){
-  .table th:nth-child(4), .table td:nth-child(4){display:none} /* Notes */
-  .table th,.table td{padding:8px 10px; font-size:14px}
-  .row-actions .btn{padding:8px 10px}
-}
 
-/* Formularis més còmodes al mòbil */
-@media (max-width:600px){
-  .form-row input,.form-row select,.form-row textarea{padding:12px}
-  .btn{padding:12px 16px}
-  .kpi strong{font-size:16px}
-  .kpi-big strong{font-size:24px}
-}
 
-/* Selector de mes: millor ús d'espai */
-@media (max-width:520px){
-  .header-month.pretty{gap:6px}
-  .chip-nav{width:34px;height:34px}
-}
+
 .login-view{
   position:fixed; inset:0; display:grid; place-items:center;
   background:linear-gradient(180deg, rgba(249,244,240,.8), rgba(255,255,255,.9));
@@ -206,12 +179,161 @@ dialog .form{padding:16px}
   cursor: pointer;
 }
 .fab-logout:hover{ filter: brightness(0.95); }
-@media (pointer: coarse){
-  .fab-logout{ padding: 16px 20px; }
-}
+
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip.opt{
   padding:6px 12px;border-radius:999px;border:1px solid var(--line);
   background:#fff;cursor:pointer;font-weight:600
 }
 .chip.opt.selected{border-color:var(--brand);background:var(--brand-weak)}
+
+
+/* --- Menú hamburguesa (amagat per defecte a desktop) --- */
+.hamburger{
+  display:none;           /* es mostra només al mòbil més avall */
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;  /* ✅ barres APILADES en columna */
+  gap:4px;                /* separació vertical entre barres */
+  width:40px; height:40px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  cursor:pointer;
+}
+.hamburger .bar{
+  display:block;
+  width:20px; height:2px; background:var(--ink);
+}
+.hamburger:focus{ outline:2px solid var(--brand-weak); }
+
+
+/* Panell i fons del menú */
+.mobile-menu[hidden], .menu-backdrop[hidden]{ display:none !important; }
+.mobile-menu{
+  position:absolute; right:10px; top:64px; /* ajusta si cal segons alçada del header */
+  background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);
+  padding:6px; min-width:180px; z-index:1000; transform-origin:top right; animation:menuIn .15s ease-out;
+}
+@keyframes menuIn{ from{ opacity:0; transform:scale(.98) translateY(-6px); } to{ opacity:1; transform:none; } }
+.mobile-item{
+  width:100%; text-align:left; padding:10px 12px; border:none; background:#fff; border-radius:10px; cursor:pointer; font-weight:600;
+}
+.mobile-item:hover{ background:#faf7f4; }
+.menu-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.08); z-index:999;
+}
+.tpl-strip{ display:none; }
+.collapse-toggle{ display:none; }
+
+
+
+
+
+
+/* ---------MOVIL----------*/
+/* ≤700px: formularis plegables i header/plantilles mòbil */
+@media (max-width:700px){
+  /* Botó hamburguesa ja el tens; afegim selector de mes centrat */
+  .topbar{
+    position:sticky; top:0;
+    display:flex; align-items:center;
+    gap:8px; padding:8px 10px; min-height:56px;
+  }
+  .logo{ height:44px; }
+  .nav{ display:none; }
+  .hamburger{ display:inline-flex; } /* icona a la vista */
+  .header-month.pretty{
+    position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%); margin:0 !important; gap:6px; z-index:5;
+  }
+  .chip-month{ padding:6px 10px; font-size:14px; }
+  .chip-nav{ width:32px; height:32px; }
+
+  /* FORMULARIS PLEGABLES (només mòbil) */
+  .collapse-toggle{
+    display:flex; align-items:center; justify-content:space-between;
+    width:100%; padding:10px 12px; margin:6px 0 0 0;
+    border:1px solid var(--line); background:#fff; border-radius:10px;
+    font-weight:700; cursor:pointer; font-size: 18.72px;
+  }
+  .collapse-toggle .caret{
+    width:10px; height:10px; border-right:2px solid var(--ink); border-bottom:2px solid var(--ink);
+    transform:rotate(45deg); transition:transform .2s;
+  }
+  .collapse-toggle.expanded .caret{ transform:rotate(-135deg); }
+
+  /* Per defecte, el formulari queda plegat al mòbil */
+  form[data-collapsible="mobile"]{ display:none; margin-top:8px; }
+  form[data-collapsible="mobile"].open{ display:grid; }
+
+  /* Plantilles: tira horitzontal al mòbil; grid amagat */
+  .tpl-list{ display:none; }
+  .tpl-strip{
+    display:flex; gap:8px; overflow-x:auto; padding:4px 2px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .tpl-pill{
+    display:inline-flex; align-items:center; gap:8px;
+    border:1px solid var(--line); background:#fff; border-radius:999px;
+    padding:8px 10px; flex:0 0 auto; cursor:pointer; box-shadow: var(--shadow);
+  }
+  .tpl-pill .thumb{
+    width:28px; height:28px; border-radius:8px; overflow:hidden;
+    display:grid; place-items:center; background:var(--brand-weak);
+  }
+  .tpl-pill .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .tpl-pill .txt{ font-weight:600; font-size:14px; }
+  .tpl-pill .price{ color:var(--muted); font-size:13px; 
+  }
+  #afegirdespesatitul, #afegiringrestitul{ display:none}
+  }
+/* ≤640px: llista (taula) completa però més còmode */
+@media (max-width:640px){
+  .table-wrap{ overflow-x:auto; }
+  .table{ font-size:14px; }
+  .table th, .table td{ padding:8px 10px; }
+  .row-actions .btn{ padding:8px 10px; }
+  .table td:nth-last-child(2){ white-space:normal; } /* Notes */
+  .table td:last-child{ white-space:nowrap; }        /* Accions */
+}
+
+/* ≤600px: export 100%, formularis còmodes, KPIs més petits */
+@media (max-width:600px){
+  .export-row .btn{ width:100%; }
+  .form-row input, .form-row select, .form-row textarea{ padding:12px; }
+  .btn{ padding:12px 16px; }
+  .kpi strong{ font-size:16px; }
+  .kpi-big strong{ font-size:24px; }
+}
+
+/* ≤520px: poliments del selector de mes */
+@media (max-width:520px){
+  .header-month.pretty{ gap:6px; }
+  .chip-nav{ width:34px; height:34px; }
+}
+
+/* Dispositius tàctils: FAB una mica més gran */
+@media (pointer: coarse){
+  .fab-logout{ padding:16px 20px; }
+}
+
+
+@media (max-width:900px){.grid.two,.grid.three{grid-template-columns:1fr}}
+/* ≤640px — Accions alineades i separadors de fila 100% amplada */
+@media (max-width:640px){
+  /* Les icones no quedin "tallades" ni massa amunt */
+  .row-actions{ align-items:center; gap:8px; }
+  .table td{ overflow:visible; }                 /* evita retalls dins del td */
+  .btn.icon{ padding:8px 10px; }                 /* mida còmoda en mòbil */
+  .table td:last-child{ white-space:nowrap; padding-right:8px; }
+
+  /* Un únic separador per fila (en lloc del border-bottom de cada cel·la) */
+  .table tbody tr{ position:relative; }
+  .table tbody tr td{ border-bottom:none; }      /* traiem els borders de cada td */
+  .table tbody tr::after{
+    content:""; position:absolute; left:0; right:0; bottom:0;
+    height:1px; background:var(--line);         /* línia contínua de banda a banda */
+  }
+  .table tbody tr:last-child::after{ display:none; } /* sense línia final */
+}
