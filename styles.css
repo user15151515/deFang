@@ -123,6 +123,7 @@ dialog .form{padding:16px}
   border:1px solid var(--brand);
   font-weight:600;
   font-size:14px;
+  align-content: center;
 }
 .header-month.pretty{display:flex;align-items:center;gap:8px}
 .header-month.pretty input{
@@ -147,11 +148,14 @@ dialog .form{padding:16px}
   font-weight:700;
   font-size:13px;
   letter-spacing:.02em;
+  
 }
 
+#expenseTotal, #incomeTotal{
+font-size: 15px;
+margin-left: 5px;
 
-
-
+}
 
 .login-view{
   position:fixed; inset:0; display:grid; place-items:center;
@@ -207,6 +211,7 @@ dialog .form{padding:16px}
 }
 .hamburger:focus{ outline:2px solid var(--brand-weak); }
 
+.resumm{ display: flex; }
 
 /* Panell i fons del menú */
 .mobile-menu[hidden], .menu-backdrop[hidden]{ display:none !important; }
@@ -237,18 +242,26 @@ dialog .form{padding:16px}
   /* Botó hamburguesa ja el tens; afegim selector de mes centrat */
   .topbar{
     position:sticky; top:0;
-    display:flex; align-items:center;
+    display:flex; align-items:center; justify-content:space-between;
     gap:8px; padding:8px 10px; min-height:56px;
   }
   .logo{ height:44px; }
   .nav{ display:none; }
-  .hamburger{ display:inline-flex; } /* icona a la vista */
-  .header-month.pretty{
-    position:absolute; left:50%; top:50%;
-    transform:translate(-50%,-50%); margin:0 !important; gap:6px; z-index:5;
+  .hamburger{
+    order:3; flex:0 0 auto;
+    display:inline-flex;
+    width:40px; height:40px;
   }
+  .header-month.pretty{
+    order:2; flex:0 1 auto;
+    display:flex; align-items:center; gap:6px;
+    margin:0;
+  }
+
   .chip-month{ padding:6px 10px; font-size:14px; }
   .chip-nav{ width:32px; height:32px; }
+  .brand{ order:1; flex:0 0 auto; }
+
 
   /* FORMULARIS PLEGABLES (només mòbil) */
   .collapse-toggle{
@@ -336,4 +349,9 @@ dialog .form{padding:16px}
     height:1px; background:var(--line);         /* línia contínua de banda a banda */
   }
   .table tbody tr:last-child::after{ display:none; } /* sense línia final */
+  .chip.year{width: 100%;
+    text-align: center;
+ 
+}
+ .kpi{display: none;}
 }
