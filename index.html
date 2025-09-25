@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="assets/logopet.png" type="image/x-icon">   
+  <link rel="icon" href="assets/logopet.png" type="image/x-icon">
   <title>deFang · Gestió</title>
 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,206 +11,74 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  <!-- LOGIN (overlay; amagat quan hi ha sessió) -->
+  <section id="loginView" class="login-view" style="display:none;">
+    <div class="login-card">
+      <img src="assets/logo.png" class="login-logo" alt="deFang" />
+      <h2>Accés</h2>
+      <form id="loginForm" class="form">
+        <div class="form-row">
+          <label>Email</label>
+          <input type="email" id="loginEmail" required autocomplete="username">
+        </div>
+        <div class="form-row">
+          <label>Contrasenya</label>
+          <input type="password" id="loginPassword" required autocomplete="current-password">
+        </div>
+        <button class="btn primary" type="submit">Entrar</button>
+        <div id="loginError" class="hint" style="color:#c62828"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- HEADER -->
   <header class="topbar">
+    <!-- Logo (esquerra) -->
     <div class="brand">
       <img src="assets/logo.png" alt="deFang" class="logo">
     </div>
+
+    <!-- Navegació (escriptori) -->
     <nav class="nav">
       <button class="nav-btn active" data-target="resum">Resum mensual</button>
-      <button class="nav-btn" data-target="ingressos">Ingressos</button>
+      <button class="nav-btn" data-target="ingressos">Vendes</button>
       <button class="nav-btn" data-target="despeses">Despeses</button>
+      <button class="nav-btn" data-target="tallers">Tallers</button>
     </nav>
-<div class="header-month pretty">
-  <button id="prevMonth" class="chip-nav" aria-label="Mes anterior">‹</button>
-  <button id="activeMonthLabel" class="chip-month" type="button"></button>
-  <input type="month" id="activeMonthPicker" />
-  <button id="nextMonth" class="chip-nav" aria-label="Mes següent">›</button>
-</div>
 
-<!-- Botó hamburguesa (mòbil) -->
-<button id="menuBtn" class="hamburger" aria-label="Menú" aria-haspopup="true" aria-expanded="false" aria-controls="mobileMenu">
-  <span class="bar"></span><span class="bar"></span><span class="bar"></span>
-</button>
+    <!-- Selector de mes (dreta) -->
+    <div class="header-month pretty" aria-label="Selector de mes">
+      <button id="prevMonth" class="chip-nav" aria-label="Mes anterior">‹</button>
+      <button id="activeMonthLabel" class="chip-month" type="button"></button>
+      <input type="month" id="activeMonthPicker" />
+      <button id="nextMonth" class="chip-nav" aria-label="Mes següent">›</button>
+    </div>
 
-<!-- Menú desplegable (mòbil) -->
-<div id="mobileMenu" class="mobile-menu" hidden>
-  <button class="mobile-item" data-target="resum">Resum mensual</button>
-  <button class="mobile-item" data-target="ingressos">Ingressos</button>
-  <button class="mobile-item" data-target="despeses">Despeses</button>
-</div>
-<div id="menuBackdrop" class="menu-backdrop" hidden></div>
-
-
-
+    <!-- Menú hamburguesa (mòbil) -->
+    <button id="menuBtn" class="hamburger" aria-label="Menú" aria-haspopup="true" aria-expanded="false" aria-controls="mobileMenu">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
   </header>
-<!-- Panell de login (mostra per defecte fins que hi ha sessió) -->
-<section id="loginView" class="login-view">
-  <div class="login-card">
-    <h2>Accés privat</h2>
-    <form id="loginForm" class="form">
-      <div class="form-row">
-        <label>Email</label>
-        <input type="email" id="loginEmail" required autocomplete="username">
-      </div>
-      <div class="form-row">
-        <label>Contrasenya</label>
-        <input type="password" id="loginPassword" required autocomplete="current-password">
-      </div>
-      <button class="btn primary" type="submit">Entrar</button>
-      <div id="loginError" class="hint" style="color:#c62828"></div>
-    </form>
+
+  <!-- Menú mòbil -->
+  <div id="mobileMenu" class="mobile-menu" hidden>
+    <button class="mobile-item" data-target="resum">Resum mensual</button>
+    <button class="mobile-item" data-target="ingressos">Vendes</button>
+    <button class="mobile-item" data-target="despeses">Despeses</button>
+    <button class="mobile-item" data-target="tallers">Tallers</button>
   </div>
-</section>
+  <div id="menuBackdrop" class="menu-backdrop" hidden></div>
 
-  <main class="container">
-    <!-- INGRESOS -->
-    <section id="ingressos" class="view">
-      <div class="section-header">
-        <h2 class="resumm">Ingressos <span id="incomeChip" class="chip total">€0,00</span></h2>
-        <div class="month-banner">Mes actiu: <strong id="monthIncomeText"></strong></div>
-      </div>
-
-      <div class="grid two">
-        <div class="card">
-          <h3 id="afegiringrestitul">Afegir ingrés</h3>
-          <button type="button" id="incomeFormToggle" class="collapse-toggle">Afegir ingrés <span class="caret"></span></button>
-
-            <form id="incomeForm" class="form" data-collapsible="mobile">
-
-            <div class="form-row">
-              <label>Títol</label>
-              <input type="text" id="incomeTitle" placeholder="Ex: Encàrrec personalitzat" required />
-            </div>
-            <div class="form-row">
-              <label>Preu (€)</label>
-              <input type="number" id="incomePrice" step="0.01" min="0" placeholder="0,00" required />
-            </div>
-            <div class="form-row">
-              <label>Data</label>
-              <input type="date" id="incomeDate" required />
-            </div>
-            <div class="form-row">
-  <label>Mètode de pagament</label>
-  <div class="chips" id="incomePayChips">
-    <button type="button" class="chip opt" data-value="efectiu">Efectiu</button>
-    <button type="button" class="chip opt selected" data-value="targeta">Targeta</button>
-  </div>
-  <input type="hidden" id="incomePay" value="targeta" />
-</div>
-
-            <div class="form-row">
-              <label>Notes (opcional)</label>
-              <textarea id="incomeNotes" rows="2" placeholder="Comentaris…"></textarea>
-            </div>
-<menu class="dialog-actions" style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
-  <button type="button" class="btn subtle" id="incomeCancelBtn" formnovalidate>Cancel·lar</button>
-  <button class="btn primary" type="submit">Desar ingrés</button>
-</menu>
-              </form>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h3>Plantilles d’ingressos</h3>
-            <button class="btn subtle" id="openIncomeTpl">+ Nova plantilla</button>
-          </div>
-          <div id="incomeTplList" class="tpl-list"></div>
-          <div id="incomeTplStrip" class="tpl-strip"></div>
-
-        </div>
-      </div>
-
-      <div class="card mt">
-        <div class="card-head">
-          <h3>Historial del mes</h3>
-          <div class="kpis">
-            <div class="kpi"><span>Total ingressos </span><strong id="incomeTotal">€0,00</strong></div>
-          </div>
-        </div>
-        <div id="incomeTableWrap" class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-          <th>Data</th><th>Títol</th><th>Preu</th><th>Mètode</th><th>Notes</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="incomeTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- DESPESES -->
-    <section id="despeses" class="view">
-      <div class="section-header">
-        <h2 class="resumm">Despeses <span id="expenseChip" class="chip total">€0,00</span></h2>
-        <div class="month-banner">Mes actiu: <strong id="monthExpenseText"></strong></div>
-      </div>
-
-      <div class="grid two">
-        <div class="card">
-          <h3 id="afegirdespesatitul">Afegir despesa</h3>
-          <button type="button" id="expenseFormToggle" class="collapse-toggle">Afegir despesa <span class="caret"></span></button>
-
-            <form id="expenseForm" class="form" data-collapsible="mobile">
-
-            <div class="form-row">
-              <label>Concepte</label>
-              <input type="text" id="expenseTitle" placeholder="Ex: Fang grogós 10kg" required />
-            </div>
-            <div class="form-row">
-              <label>Import (€)</label>
-              <input type="number" id="expensePrice" step="0.01" min="0" placeholder="0,00" required />
-            </div>
-            <div class="form-row">
-              <label>Data</label>
-              <input type="date" id="expenseDate" required />
-            </div>
-            <div class="form-row">
-              <label>Notes (opcional)</label>
-              <textarea id="expenseNotes" rows="2" placeholder="Comentaris…"></textarea>
-            </div>
-            <button class="btn primary" type="submit">Desar despesa</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h3>Plantilles de despeses</h3>
-            <button class="btn subtle" id="openExpenseTpl">+ Nova plantilla</button>
-          </div>
-          <div id="expenseTplList" class="tpl-list"></div>
-          <div id="expenseTplStrip" class="tpl-strip"></div>
-
-        </div>
-      </div>
-
-      <div class="card mt">
-        <div class="card-head">
-          <h3>Historial del mes</h3>
-          <div class="kpis">
-            <div class="kpi"><span>Total despeses </span><strong id="expenseTotal" >€0,00</strong></div>
-          </div>
-        </div>
-        <div id="expenseTableWrap" class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Data</th><th>Concepte</th><th>Import</th><th>Notes</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="expenseTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+  <!-- CONTINGUT -->
+  <main class="container" style="display:none;">
 
     <!-- RESUM -->
     <section id="resum" class="view show">
       <div class="section-header">
         <h2>Resum mensual</h2>
         <div class="actions-row">
-          <div class="month-banner">Mes actiu: <strong id="monthSummaryText"></strong></div>
+          <div class="month-banner">Mes actiu: <strong id="monthSummaryText">—</strong></div>
         </div>
       </div>
 
@@ -229,80 +97,381 @@
         </div>
       </div>
 
-
-      <div class="export-row">
-          <span id="exportYearBadge" class="chip year"></span> <!-- AFEGIT -->
-
-  <button class="btn primary" id="exportExcelBtn">Exportar Excel</button>
-  <button class="btn primary" id="exportPdfBtn">Exportar PDF</button>
-</div>
+      <div class="card mt">
+        <div class="card-head">
+          <h3>Exportació anual</h3>
+          <span id="exportYearBadge" class="chip year">ANY —</span>
+        </div>
+        <div class="export-row">
+          <button id="exportExcelBtn" class="btn icon">Exportar Excel</button>
+          <button id="exportPdfBtn" class="btn icon">Exportar PDF</button>
+        </div>
+      </div>
     </section>
+
+    <!-- VENDES (abans “ingressos”) -->
+    <section id="ingressos" class="view">
+      <div class="section-header">
+        <h2>Vendes <span id="incomeChip" class="chip total">€0,00</span></h2>
+        <div class="month-banner">Mes actiu: <strong id="monthIncomeText">—</strong></div>
+      </div>
+
+      <!-- BOTÓ desplegable secció (mòbil) -->
+      <button type="button" id="incomeSectionToggle" class="section-toggle">Afegir<span class="caret"></span></button>
+
+      <!-- Collapsible (formulari + plantilles) -->
+      <div id="incomeCollapsible" class="collapsible-area">
+        <div class="grid two">
+
+          <!-- FORMULARI VENDA -->
+          <div class="card">
+            <form id="incomeForm" class="form" data-collapsible="mobile">
+              <div class="form-row">
+                <label>Data</label>
+                <input type="date" id="incomeDate" required />
+              </div>
+
+              <div class="form-row">
+                <label>Peça</label>
+                <input type="text" id="salePiece" placeholder="Ex: Tassa gran" />
+                <!-- compatibilitat antiga -->
+                <input type="hidden" id="incomeTitle" />
+              </div>
+
+              <div class="form-row">
+                <label>Tipus de fang</label>
+                <input type="text" id="saleClay" placeholder="Ex: Gres, Terrissa..." />
+              </div>
+
+              <div class="form-row">
+                <label>Color / Disseny</label>
+                <input type="text" id="saleDesign" placeholder="Ex: Blau marí, espirals..." />
+              </div>
+
+              <div class="form-row">
+                <label>Tipus de venda</label>
+                <select id="saleType">
+                  <option value="stock">Stock</option>
+                  <option value="encarrec">Encàrrec</option>
+                  <option value="outlet">Outlet</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <label>Preu (€)</label>
+                <input type="number" id="incomePrice" step="0.01" min="0" required />
+              </div>
+
+              <div class="form-row">
+                <label>Quantitat</label>
+                <input type="number" id="saleQty" min="1" step="1" value="1" />
+              </div>
+
+              <div class="form-row">
+                <label>Total (automàtic)</label>
+                <input type="text" id="saleTotal" readonly />
+              </div>
+
+              <div class="form-row">
+                <label>Mètode de pagament</label>
+                <div class="chips" id="incomePayChips">
+                  <button type="button" class="chip opt" data-value="efectiu">Efectiu</button>
+                  <button type="button" class="chip opt selected" data-value="targeta">Targeta</button>
+                </div>
+                <input type="hidden" id="incomePay" value="targeta" />
+              </div>
+
+              <div class="form-row">
+                <label>Comentaris</label>
+                <textarea id="incomeNotes" rows="2" placeholder="Opcional"></textarea>
+              </div>
+
+              <div class="actions-row">
+                <button type="button" class="btn subtle" id="incomeCancelBtn">Cancel·lar</button>
+                <button class="btn primary" type="submit">Desar venda</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- PLANTILLES VENDES -->
+          <div class="card">
+            <div class="card-head">
+              <h3>Plantilles de vendes</h3>
+              <button id="openIncomeTpl" class="btn icon">Nova plantilla</button>
+            </div>
+            <div id="incomeTplStrip" class="tpl-strip"></div>
+            <div id="incomeTplList" class="tpl-list"></div>
+            <div class="hint mt">Clica “Usar” per preomplir el formulari.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HISTORIAL DEL MES -->
+      <div class="card mt">
+        <div class="card-head">
+          <h3>Historial del mes</h3>
+          <div class="kpis">
+            <div class="kpi"><span>Total vendes</span><strong id="incomeTotal">€0,00</strong></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Peça</th><th>Fang</th><th>Disseny</th><th>Tipus</th><th>Preu</th><th>Quant.</th><th>Total</th><th>Mètode</th><th>Comentaris</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="incomeTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESPESES -->
+    <section id="despeses" class="view">
+      <div class="section-header">
+        <h2>Despeses <span id="expenseChip" class="chip total">€0,00</span></h2>
+        <div class="month-banner">Mes actiu: <strong id="monthExpenseText">—</strong></div>
+      </div>
+
+      <!-- BOTÓ desplegable secció (mòbil) -->
+      <button type="button" id="expenseSectionToggle" class="section-toggle">Afegir<span class="caret"></span></button>
+
+      <!-- Collapsible (formulari + plantilles) -->
+      <div id="expenseCollapsible" class="collapsible-area">
+        <div class="grid two">
+
+          <!-- FORMULARI DESPESA -->
+          <div class="card">
+            <form id="expenseForm" class="form" data-collapsible="mobile">
+              <div class="form-row">
+                <label>Empresa</label>
+                <input type="text" id="expenseCompany" placeholder="Ex: Proveïdor X" />
+              </div>
+              <div class="form-row">
+                <label>Import (€)</label>
+                <input type="number" id="expensePrice" step="0.01" min="0" required />
+              </div>
+              <div class="form-row">
+                <label>IVA (€)</label>
+                <input type="number" id="expenseIVA" step="0.01" min="0" />
+              </div>
+              <div class="form-row">
+                <label>Base (auto)</label>
+                <input type="text" id="expenseBase" readonly />
+              </div>
+              <div class="form-row">
+                <label>Data</label>
+                <input type="date" id="expenseDate" required />
+              </div>
+              <div class="form-row">
+                <label>Notes</label>
+                <textarea id="expenseNotes" rows="2" placeholder="Opcional"></textarea>
+              </div>
+              <div class="actions-row">
+                <button class="btn primary" type="submit">Desar despesa</button>
+                <button class="btn subtle" id="expenseCancelBtn" type="button">Cancel·lar</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- PLANTILLES DESPESES -->
+          <div class="card">
+            <div class="card-head">
+              <h3>Plantilles de despeses</h3>
+              <button id="openExpenseTpl" class="btn icon">Nova plantilla</button>
+            </div>
+            <div id="expenseTplStrip" class="tpl-strip"></div>
+            <div id="expenseTplList" class="tpl-list"></div>
+            <div class="hint mt">Clica “Usar” per preomplir el formulari.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HISTORIAL DEL MES -->
+      <div class="card mt">
+        <div class="card-head">
+          <h3>Historial del mes</h3>
+          <div class="kpis">
+            <div class="kpi"><span>Total despeses</span><strong id="expenseTotal">€0,00</strong></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Empresa</th><th>Import</th><th>IVA</th><th>Base</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TALLERS -->
+    <section id="tallers" class="view">
+      <div class="section-header">
+        <h2>Tallers <span id="tallerChip" class="chip total">€0,00</span></h2>
+        <div class="month-banner">Mes actiu: <strong id="monthTallerText">—</strong></div>
+      </div>
+
+      <!-- BOTÓ desplegable secció (mòbil) -->
+      <button type="button" id="tallerSectionToggle" class="section-toggle">Afegir<span class="caret"></span></button>
+
+      <!-- Collapsible (formulari + plantilles) -->
+      <div id="tallerCollapsible" class="collapsible-area">
+        <div class="grid two">
+
+          <!-- FORMULARI TALLER -->
+          <div class="card">
+            <form id="tallerForm" class="form" data-collapsible="mobile">
+              <div class="form-row">
+                <label>Data</label>
+                <input type="date" id="tallerDate" required />
+              </div>
+              <div class="form-row">
+                <label>Tipus de taller</label>
+                <select id="tallerType">
+                  <option value="setmanal">Setmanal</option>
+                  <option value="dissabtes">Dissabtes</option>
+                  <option value="casal">Casal</option>
+                  <option value="nens">Nens</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Preu (€)</label>
+                <input type="number" id="tallerPrice" step="0.01" min="0" required />
+              </div>
+              <div class="form-row">
+                <label>Quantitat</label>
+                <input type="number" id="tallerQty" step="1" min="1" value="1" />
+              </div>
+              <div class="actions-row">
+                <button class="btn primary" type="submit">Desar taller</button>
+                <button class="btn subtle" id="tallerCancelBtn" type="button">Cancel·lar</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- PLANTILLES TALLERS (placeholder) -->
+          <div class="card">
+            <div class="card-head">
+              <h3>Plantilles de tallers</h3>
+              <div class="hint">Pots reutilitzar plantilles de vendes si convé.</div>
+            </div>
+            <div class="hint">Sense plantilles específiques per ara.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HISTORIAL DEL MES -->
+      <div class="card mt">
+        <div class="card-head">
+          <h3>Historial del mes</h3>
+          <div class="kpis">
+            <div class="kpi"><span>Total tallers</span><strong id="tallerTotal">€0,00</strong></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Tipus</th><th>Preu</th><th>Quant.</th><th>Total</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tallerTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <!-- Diàlegs -->
-  <dialog id="tplDialog">
-    <form method="dialog" id="tplForm" class="form">
-      <h3 id="tplDialogTitle">Nova plantilla</h3>
-      <div class="form-row">
-        <label>Tipus</label>
-        <select id="tplType" required>
-          <option value="ingres">Ingrés</option>
-          <option value="despesa">Despesa</option>
+  <!-- FAB: logout -->
+  <button id="logoutBtn" class="fab-logout" title="Tancar sessió">Sortir</button>
+
+<!-- Diàleg: Nova plantilla (ÚNIC) -->
+<dialog id="tplDialog">
+  <form id="tplForm" method="dialog" class="form">
+    <h3 id="tplDialogTitle">Nova plantilla</h3>
+
+    <!-- Tipus de plantilla -->
+    <div class="form-row">
+      <label>Tipus</label>
+      <select id="tplType" required>
+        <option value="ingres">Ingrés / Venda</option>
+        <option value="despesa">Despesa</option>
+      </select>
+    </div>
+
+    <!-- Camps comuns -->
+    <div class="form-row">
+      <label>Peça</label>
+      <input type="text" id="tplTitle" required />
+    </div>
+
+    <div class="form-row">
+      <label>Preu predeterminat (€)</label>
+      <input type="number" id="tplPrice" step="0.01" min="0" />
+    </div>
+
+    <div class="form-row">
+      <label>Imatge</label>
+      <input type="file" id="tplImageFile" accept="image/*" />
+    </div>
+
+    <!-- Camps extra (només vendes) -->
+    <div id="tplExtraFields" class="form-grid" style="display:none">
+      <div class="col">
+        <label>Peça (opcional)</label>
+        <input type="text" id="tplPiece" />
+      </div>
+      <div class="col">
+        <label>Tipus de fang (opcional)</label>
+        <input type="text" id="tplClay" />
+      </div>
+      <div class="col">
+        <label>Color / Disseny (opcional)</label>
+        <input type="text" id="tplDesign" />
+      </div>
+      <div class="col">
+        <label>Tipus de venda</label>
+        <select id="tplSaleType">
+          <option value="">(cap)</option>
+          <option value="stock">Stock</option>
+          <option value="encarrec">Encàrrec</option>
+          <option value="outlet">Outlet</option>
         </select>
       </div>
-      <div class="form-row">
-        <label>Nom</label>
-        <input type="text" id="tplTitle" placeholder="Ex: Fang" required />
-      </div>
-      <div class="form-row">
-        <label>Preu base (€)</label>
-        <input type="number" id="tplPrice" step="0.01" min="0" placeholder="0,00" required />
-      </div>
-      <div class="form-row">
-        <label>Imatge (opcional)</label>
-        <input type="file" id="tplImage" accept="image/*" />
-      </div>
-      <menu class="dialog-actions">
-<button class="btn subtle" id="cancelTplBtn" type="button">Cancel·lar</button>
-        <button class="btn primary" id="saveTplBtn" value="default">Desar plantilla</button>
-      </menu>
-    </form>
-  </dialog>
+    </div>
 
-  <dialog id="useTplDialog">
-    <form method="dialog" id="useTplForm" class="form">
-      <h3 id="useTplTitle">Afegir des de plantilla</h3>
-      <div class="form-row">
-        <label>Preu (€)</label>
-        <input type="number" id="useTplPrice" step="0.01" min="0" required />
-      </div>
-      <div class="form-row">
-        <label>Data</label>
-        <input type="date" id="useTplDate" required />
-      </div>
-      <menu class="dialog-actions">
-        <button class="btn subtle" value="cancel">Cancel·lar</button>
-        <button class="btn primary" id="confirmUseTpl" value="default">Afegir</button>
-      </menu>
-    </form>
-  </dialog>
+    <div class="dialog-actions">
+      <button class="btn subtle" id="cancelTplBtn" type="button">Cancel·lar</button>
+      <button class="btn primary" id="saveTplBtn" type="submit">Desar</button>
+    </div>
+  </form>
+</dialog>
 
-  <div id="toast"></div>
-<button id="logoutBtn" class="fab-logout" title="Sortir">Log out</button>
 
-  <!-- Firebase compat -->
+  <!-- Toast -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-  <!-- SheetJS per exportar Excel -->
+  <!-- Exportacions -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
 
-
+  <!-- App -->
   <script src="app.js"></script>
 </body>
 </html>

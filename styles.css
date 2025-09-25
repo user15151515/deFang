@@ -355,3 +355,27 @@ margin-left: 5px;
 }
  .kpi{display: none;}
 }
+
+
+/* Desplegable de secció (formulari + plantilles) */
+.section-toggle{
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; padding:10px 12px; margin:8px 0 12px 0;
+  border:1px solid var(--line); background:#fff; border-radius:10px;
+  font-weight:700; cursor:pointer; font-size: 1.16rem;
+}
+.section-toggle .caret{
+  width:10px; height:10px; border-right:2px solid var(--ink); border-bottom:2px solid var(--ink);
+  transform:rotate(45deg); transition:transform .2s;
+}
+.section-toggle.expanded .caret{ transform:rotate(-135deg); }
+
+.collapsible-area{ display:none; }
+.collapsible-area.open{ display:block; } /* conté una grid two a dins */
+
+/* grid de 2 columnes per als camps extra del diàleg (es trenca a 1 col a mòbil) */
+.form-grid{ display:grid; gap:10px; grid-template-columns:1fr 1fr; }
+.form-grid .col{ display:grid; gap:6px; }
+@media (max-width:640px){
+  .form-grid{ grid-template-columns:1fr; }
+}
