@@ -413,6 +413,19 @@ function recomputeBase(){
 expImport?.addEventListener("input", recomputeBase);
 expIVA?.addEventListener("input", recomputeBase);
 recomputeBase();
+// TALLERS: Total = preu * quantitat (en directe)
+const talPrice = $("#tallerPrice");
+const talQty   = $("#tallerQty");
+const talTotal = $("#tallerTotal");
+function recomputeTallerTotal(){
+  const p = Number(talPrice?.value || 0);
+  const q = Number(talQty?.value   || 1);
+  if (talTotal) talTotal.value = fmtEUR(p * q);
+}
+talPrice?.addEventListener("input", recomputeTallerTotal);
+talQty?.addEventListener("input",  recomputeTallerTotal);
+recomputeTallerTotal();
+
 
 
   const incomePayInput = $("#incomePay"); // <input type="hidden" ...> al formulari
@@ -631,6 +644,22 @@ $("#expenseForm").addEventListener("submit", async (ev)=>{
   $("#tallerForm").reset();
   $("#tallerDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
   toast("Taller desat");
+
+  // Recalcula el total a 0,00 € després del reset
+(function(){
+  const talPrice = $("#tallerPrice");
+  const talQty   = $("#tallerQty");
+  const talTotal = $("#tallerTotal");
+  const recomputeTallerTotal = ()=>{
+    const p = Number(talPrice?.value || 0);
+    const q = Number(talQty?.value   || 1);
+    if (talTotal) talTotal.value = fmtEUR(p*q);
+  };
+  talPrice?.addEventListener("input", recomputeTallerTotal, { once:true });
+  talQty?.addEventListener("input",  recomputeTallerTotal, { once:true });
+  recomputeTallerTotal();
+})();
+
 });
 
   // Nova plantilla
