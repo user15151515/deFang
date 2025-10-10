@@ -277,9 +277,8 @@ margin-left: 5px;
   .collapse-toggle.expanded .caret{ transform:rotate(-135deg); }
 
   /* Per defecte, el formulari queda plegat al mòbil */
-  form[data-collapsible="mobile"]{ display:none; margin-top:8px; }
-  form[data-collapsible="mobile"].open{ display:grid; }
-
+.collapsible-area form[data-collapsible="mobile"]{ display:none; margin-top:8px; }
+.collapsible-area.open form[data-collapsible="mobile"]{ display:grid; }
   /* Plantilles: tira horitzontal al mòbil; grid amagat */
   .tpl-list{ display:none; }
   .tpl-strip{
