@@ -151,7 +151,7 @@ dialog .form{padding:16px}
   
 }
 
-#expenseTotal, #incomeTotal{
+#expenseTotal, #incomeTotal, #tallerTotal{
 font-size: 15px;
 margin-left: 5px;
 
@@ -362,6 +362,7 @@ margin-left: 5px;
   width:100%; padding:10px 12px; margin:8px 0 12px 0;
   border:1px solid var(--line); background:#fff; border-radius:10px;
   font-weight:700; cursor:pointer; font-size: 1.16rem;
+  box-shadow: var(--shadow);
 }
 .section-toggle .caret{
   width:10px; height:10px; border-right:2px solid var(--ink); border-bottom:2px solid var(--ink);
