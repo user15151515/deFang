@@ -930,17 +930,78 @@ function applyTemplateToForm(tpl, type){
 
 
 // ---- Editar registre ----
-function editEntry(it){
-  const price = prompt("Nou import (€):", String(it.price ?? 0));
-  if(price===null) return;
-  const dateStr = prompt("Nova data (YYYY-MM-DD):", toDateInput(it.date.toDate?it.date.toDate():new Date(it.date)));
-  if(dateStr===null) return;
-  const d = new Date(dateStr);
-  itemsCol.doc(it.id).update({
-    price: Number(price||0),
-    date: firebase.firestore.Timestamp.fromDate(d),
-    monthKey: yyyyMM(d)
-  }).then(()=>toast("Registre actualitzat"));
+// ---- Editar registre complet ----
+async function editEntry(it){
+  // Determina tipus (venda, despesa, taller)
+  const kind = it.kind || "";
+  const docRef = itemsCol.doc(it.id);
+
+  // Helper per a prompt amb valor per defecte
+  const ask = (label, def="")=>{
+    const v = prompt(label, def);
+    return v===null ? def : v.trim();
+  };
+
+  // Data
+  const oldDate = it.date?.toDate ? it.date.toDate() : new Date(it.date);
+  const newDateStr = ask("Data (YYYY-MM-DD):", toDateInput(oldDate));
+  const newDate = new Date(newDateStr);
+
+  // Camps segons tipus
+  if (kind === "ingres-entry"){
+    const piece  = ask("Peça:", it.piece || it.title || "");
+    const clay   = ask("Tipus de fang:", it.clay || "");
+    const design = ask("Color / Disseny:", it.design || "");
+    const saleType = ask("Tipus de venda (stock / encarrec / outlet):", it.saleType || "stock");
+    const price = Number(ask("Preu unitari (€):", it.price ?? 0)) || 0;
+    const qty   = Number(ask("Quantitat:", it.qty ?? 1)) || 1;
+    const pay   = ask("Mètode (efectiu / targeta):", it.paymentMethod || "targeta");
+    const notes = ask("Comentaris:", it.notes || "");
+    const total = price * qty;
+
+    await docRef.update({
+      piece, clay, design, saleType,
+      price, qty, total,
+      paymentMethod: pay,
+      notes,
+      date: firebase.firestore.Timestamp.fromDate(newDate),
+      monthKey: yyyyMM(newDate)
+    });
+    toast("Venda actualitzada");
+  }
+
+  else if (kind === "despesa-entry"){
+    const title = ask("Empresa / Concepte:", it.title || "");
+    const price = Number(ask("Import total (€):", it.price ?? 0)) || 0;
+    const iva   = Number(ask("IVA (€):", it.iva ?? 0)) || 0;
+    const base  = Math.max(price - iva, 0);
+    const notes = ask("Notes:", it.notes || "");
+
+    await docRef.update({
+      title, price, iva, base, notes,
+      date: firebase.firestore.Timestamp.fromDate(newDate),
+      monthKey: yyyyMM(newDate)
+    });
+    toast("Despesa actualitzada");
+  }
+
+  else if (kind === "taller-entry"){
+    const ttype = ask("Tipus de taller (setmanal / dissabtes / casal / nens):", it.tallerType || "setmanal");
+    const price = Number(ask("Preu (€):", it.price ?? 0)) || 0;
+    const qty   = Number(ask("Quantitat:", it.qty ?? 1)) || 1;
+    const total = price * qty;
+
+    await docRef.update({
+      tallerType: ttype, price, qty, total,
+      date: firebase.firestore.Timestamp.fromDate(newDate),
+      monthKey: yyyyMM(newDate)
+    });
+    toast("Taller actualitzat");
+  }
+
+  else {
+    toast("Tipus de registre desconegut");
+  }
 }
 
 // ---- Icones ----

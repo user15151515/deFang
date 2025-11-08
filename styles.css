@@ -151,11 +151,7 @@ dialog .form{padding:16px}
   
 }
 
-#expenseTotal, #incomeTotal, #tallerTotal{
-font-size: 15px;
-margin-left: 5px;
 
-}
 
 .login-view{
   position:fixed; inset:0; display:grid; place-items:center;
