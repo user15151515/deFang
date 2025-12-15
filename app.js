@@ -575,56 +575,60 @@ $('#tplForm')?.addEventListener('submit', saveTemplate);
 $('#cancelTplBtn')?.addEventListener('click', ()=> $('#tplDialog').close());
 
 
-// Afegir despesa
-$("#expenseForm").addEventListener("submit", async (ev)=>{
+// Afegir despesa (DESPESES)
+$("#expenseForm")?.addEventListener("submit", async (ev)=>{
   ev.preventDefault();
 
-  const title = $("#expenseTitle").value.trim();
-  const price = Number($("#expensePrice").value||0);
-  const iva   = Number($("#expenseIVA").value||0);
+  const companyEl = $("#expenseCompany");
+  const priceEl   = $("#expensePrice");
+  const ivaEl     = $("#expenseIVA");
+  const baseEl    = $("#expenseBase");
+  const dateEl    = $("#expenseDate");
+  const notesEl   = $("#expenseNotes");
+
+  // Si falta algun element, no petem: avisem
+  if (!companyEl || !priceEl || !ivaEl || !dateEl || !notesEl){
+    console.error("Falten camps del formulari de despeses", { companyEl, priceEl, ivaEl, dateEl, notesEl });
+    toast("Error: falta algun camp del formulari de despeses a l'HTML");
+    return;
+  }
+
+  const title = companyEl.value.trim();        // "Empresa/Concepte" (guardem a 'title' per compatibilitat)
+  const price = Number(priceEl.value || 0);
+  const iva   = Number(ivaEl.value   || 0);
   const base  = Math.max(price - iva, 0);
 
-  const dateStr = $("#expenseDate").value;
-  if(!title || !dateStr) return;
+  const dateStr = dateEl.value;
+  if (!title || !dateStr) return;
   const date = new Date(dateStr);
 
-  const notes = $("#expenseNotes").value.trim();
+  const notes = notesEl.value.trim();
 
   await itemsCol.add({
-    kind:"despesa-entry",
-    title, price, iva, base,
+    kind: "despesa-entry",
+    title,
+    price,
+    iva,
+    base,
     date: firebase.firestore.Timestamp.fromDate(date),
     monthKey: yyyyMM(date),
     notes,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
+  // RESET + deixar data dins del mes actiu + base recalculada
   $("#expenseForm").reset();
   $("#expenseDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
-  // recalcula la base (0,00) després del reset
-  (function(){
-    const expImport = $("#expensePrice");
-    const expIVA    = $("#expenseIVA");
-    const expBase   = $("#expenseBase");
-    const recomputeBase = ()=>{
-      const imp = Number(expImport?.value||0);
-      const iv  = Number(expIVA?.value||0);
-      if (expBase) expBase.value = fmtEUR(Math.max(imp - iv, 0));
-    };
-    expImport?.addEventListener("input", recomputeBase, { once:true });
-    expIVA?.addEventListener("input", recomputeBase, { once:true });
-    recomputeBase();
-  })();
+  if (baseEl) baseEl.value = fmtEUR(0);
 
   toast("Despesa desada");
 
-  // al mòbil, plega el formulari després de desar
+  // al mòbil, plega la secció després de desar (els teus IDs actuals)
   if (window.matchMedia("(max-width:700px)").matches){
-    document.getElementById("expenseForm")?.classList.remove("open");
-    document.getElementById("expenseFormToggle")?.classList.remove("expanded");
+    document.getElementById("expenseCollapsible")?.classList.remove("open");
+    document.getElementById("expenseSectionToggle")?.classList.remove("expanded");
   }
 });
-
 
   $("#tallerForm")?.addEventListener("submit", async (ev)=>{
   ev.preventDefault();
