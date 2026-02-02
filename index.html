@@ -219,7 +219,12 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Data</th><th>Peça</th><th>Fang</th><th>Disseny</th><th>Tipus</th><th>Preu</th><th>Quant.</th><th>Total</th><th>Mètode</th><th>Comentaris</th><th></th>
+                <th>
+  <button type="button" id="incomeDateSortBtn" class="th-sort">
+    Data <span id="incomeDateSortIcon" class="sort-arrow">▼</span>
+  </button>
+</th>
+<th>Peça</th><th>Fang</th><th>Disseny</th><th>Tipus</th><th>Preu</th><th>Quant.</th><th>Total</th><th>Mètode</th><th>Comentaris</th><th></th>
               </tr>
             </thead>
             <tbody id="incomeTableBody"></tbody>
@@ -257,10 +262,13 @@
                 <label>IVA (€)</label>
                 <input type="number" id="expenseIVA" step="0.01" min="0" />
               </div>
-              <div class="form-row">
-                <label>Base (auto)</label>
-                <input type="text" id="expenseBase" readonly />
-              </div>
+           <div class="form-row">
+            <label>Base (€)</label>
+            <input type="number" id="expenseBase" step="0.01" min="0" />
+            <div id="expenseMathWarn" class="hint warn" style="display:none;"></div>
+          </div>
+
+
               <div class="form-row">
                 <label>Data</label>
                 <input type="date" id="expenseDate" required />
@@ -302,7 +310,12 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Data</th><th>Empresa</th><th>Import</th><th>IVA</th><th>Base</th><th></th>
+                <th>
+  <button type="button" id="expenseDateSortBtn" class="th-sort">
+    Data <span id="expenseDateSortIcon" class="sort-arrow">▼</span>
+  </button>
+</th>
+<th>Empresa</th><th>Import</th><th>IVA</th><th>Base</th><th></th>
               </tr>
             </thead>
             <tbody id="expenseTableBody"></tbody>
@@ -351,7 +364,8 @@
               </div>
               <div class="form-row">
   <label>Total (automàtic)</label>
-  <input type="text" id="tallerTotal" readonly />
+  <input type="text" id="tallerTotalCalc" readonly />
+
 </div>
 
               <div class="actions-row">
@@ -384,7 +398,12 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Data</th><th>Tipus</th><th>Preu</th><th>Quant.</th><th>Total</th><th></th>
+                <th>
+  <button type="button" id="tallerDateSortBtn" class="th-sort">
+    Data <span id="tallerDateSortIcon" class="sort-arrow">▼</span>
+  </button>
+</th>
+<th>Tipus</th><th>Preu</th><th>Quant.</th><th>Total</th><th></th>
               </tr>
             </thead>
             <tbody id="tallerTableBody"></tbody>

@@ -41,6 +41,61 @@ function dateInsideActiveMonth(ym){
 }
 function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),2200); }
 function escapeHtml(s){ return (s||"").replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function entryMs(it){
+  const d = it?.date?.toDate ? it.date.toDate() : new Date(it?.date);
+  return d instanceof Date && !isNaN(d) ? d.getTime() : 0;
+}
+
+function sortByDate(list, dir){
+  const copy = [...(list || [])];
+  copy.sort((a,b)=> dir === "asc" ? (entryMs(a) - entryMs(b)) : (entryMs(b) - entryMs(a)));
+  return copy;
+}
+
+function updateSortIcons(){
+  const map = {
+    income:  "#incomeDateSortIcon",
+    expense: "#expenseDateSortIcon",
+    taller:  "#tallerDateSortIcon"
+  };
+  Object.keys(map).forEach(key=>{
+    const el = $(map[key]);
+    if (!el) return;
+    el.textContent = state.sortDir[key] === "asc" ? "▲" : "▼";
+  });
+}
+
+function setupDateSortButtons(){
+  const incomeBtn  = document.getElementById("incomeDateSortBtn");
+  const expenseBtn = document.getElementById("expenseDateSortBtn");
+  const tallerBtn  = document.getElementById("tallerDateSortBtn");
+
+  const setArrow = (btn, dir)=>{
+    if (!btn) return;
+    const arrow = btn.querySelector(".sort-arrow");
+    if (!arrow) return;
+    arrow.textContent = (dir === "asc") ? "▲" : "▼";
+    arrow.setAttribute("aria-label", dir === "asc" ? "Ordre antic → nou" : "Ordre nou → antic");
+  };
+
+  function updateSortIcons(){
+    setArrow(incomeBtn,  state.sortDir.income);
+    setArrow(expenseBtn, state.sortDir.expense);
+    setArrow(tallerBtn,  state.sortDir.taller);
+  }
+
+  const toggle = (key)=>{
+    state.sortDir[key] = (state.sortDir[key] === "asc") ? "desc" : "asc";
+    updateSortIcons();
+    renderAllForActiveMonth();
+  };
+
+  incomeBtn?.addEventListener("click",  ()=>toggle("income"));
+  expenseBtn?.addEventListener("click", ()=>toggle("expense"));
+  tallerBtn?.addEventListener("click",  ()=>toggle("taller"));
+
+  updateSortIcons(); // pinta fletxes al carregar
+}
 
 // ---- Estat ----
 let unsub = { incomeTpl:null, expenseTpl:null, incomeEntries:null, expenseEntries:null };
@@ -48,9 +103,10 @@ const state = {
   activeMonth: yyyyMM(new Date()),
   incomeEntries: [],
   expenseEntries: [],
-    tallerEntries: [],
+  tallerEntries: [],
   incomeTpls: [],
-  expenseTpls: []
+  expenseTpls: [],
+  sortDir: { income: "desc", expense: "desc", taller: "desc" } // 👈 nou
 };
 
 // ---- Render ----
@@ -150,14 +206,21 @@ function renderSales(list, tbodyEl, totalEl){
 function renderExpenses(list, tbodyEl, totalEl){
   tbodyEl.innerHTML = "";
   let total = 0;
-  if (!list.length){ tbodyEl.innerHTML = `<tr><td colspan="6" class="hint">Cap despesa aquest mes.</td></tr>`; totalEl.textContent = fmtEUR(0); return; }
+  if (!list.length){
+    tbodyEl.innerHTML = `<tr><td colspan="6" class="hint">Cap despesa aquest mes.</td></tr>`;
+    totalEl.textContent = fmtEUR(0);
+    return;
+  }
 
   for (const it of list){
     const dateTxt = toDateInput(it.date.toDate ? it.date.toDate() : new Date(it.date));
     const title   = escapeHtml(it.title || "");
     const price   = Number(it.price)||0;
     const iva     = Number(it.iva)||0;
-    const base    = (price - iva);
+
+    // ✅ usa base guardada; fallback per registres antics
+    const base = (it.base != null) ? Number(it.base) : (price - iva);
+
     total += price;
 
     const tr = document.createElement("tr");
@@ -174,13 +237,18 @@ function renderExpenses(list, tbodyEl, totalEl){
     ].join("");
 
     tr.querySelector('[data-action="del"]').addEventListener("click", async ()=>{
-      if (confirm("Vols eliminar aquesta despesa?")){ await itemsCol.doc(it.id).delete(); toast("Despesa eliminada"); }
+      if (confirm("Vols eliminar aquesta despesa?")){
+        await itemsCol.doc(it.id).delete();
+        toast("Despesa eliminada");
+      }
     });
     tr.querySelector('[data-action="edit"]').addEventListener("click", ()=> editEntry(it));
     tbodyEl.appendChild(tr);
   }
+
   totalEl.textContent = fmtEUR(total);
 }
+
 
 function renderTallers(list, tbodyEl, totalEl){
   tbodyEl.innerHTML = "";
@@ -269,53 +337,46 @@ function renderEntries(list, tbodyEl, totalEl, opts = {}) {
 
   totalEl.textContent = fmtEUR(total);
 }
-
 function renderAllForActiveMonth(){
-  const m = state.activeMonth;
+  const key = state.activeMonth;
 
-  // etiquetes de mes
-  $("#monthIncomeText").textContent  = formatMonth(m);
-  $("#monthExpenseText").textContent = formatMonth(m);
-  $("#monthSummaryText").textContent = formatMonth(m);
-  $("#monthTallerText") && ($("#monthTallerText").textContent = formatMonth(m)); // ✅
+  // Header / labels
+  const monthLabel = formatMonth(key);
+  $("#activeMonthLabel").textContent = monthLabel;
+  $("#activeMonthPicker").value = key;
 
-  // filtres
-  const vendesList  = state.incomeEntries.filter(e=>e.monthKey===m);
-  const despesesList= state.expenseEntries.filter(e=>e.monthKey===m);
-  const tallersList = state.tallerEntries .filter(e=>e.monthKey===m); // ✅
+  $("#monthSummaryText").textContent = monthLabel;
+  $("#monthIncomeText").textContent  = monthLabel;
+  $("#monthExpenseText").textContent = monthLabel;
+  $("#monthTallerText").textContent  = monthLabel;
 
-  // render taules (VENDES amb nova signatura, DESPESES amb IVA/Base, TALLERS)
-  renderSales(vendesList, $("#incomeTableBody"), $("#incomeTotal"));               // ✅
-  renderExpenses(despesesList, $("#expenseTableBody"), $("#expenseTotal"));       // ✅
-  $("#tallerTableBody") && renderTallers(tallersList, $("#tallerTableBody"), $("#tallerTotal")); // ✅
+  // Filtra per mes i ORDENA segons estat
+  const vendesList  = sortByDate(state.incomeEntries.filter(e=>e.monthKey===key),  state.sortDir.income);
+  const despList    = sortByDate(state.expenseEntries.filter(e=>e.monthKey===key), state.sortDir.expense);
+  const tallersList = sortByDate(state.tallerEntries.filter(e=>e.monthKey===key),  state.sortDir.taller);
 
-  // totals
-  const vendesTotal  = vendesList.reduce((s,e)=> s + ((Number(e.total)|| (Number(e.price)||0) * (Number(e.qty)||1))), 0); // ✅
-  const tallersTotal = tallersList.reduce((s,e)=> s + ((Number(e.total)|| (Number(e.price)||0) * (Number(e.qty)||1))), 0); // ✅
-  const despesesTotal= despesesList.reduce((s,e)=> s + (Number(e.price)||0), 0);
+  // Render taules (✅ IMPORTANT: abans era renderIncome i NO existeix)
+  renderSales(vendesList,   $("#incomeTableBody"),  $("#incomeTotal"));
+  renderExpenses(despList,  $("#expenseTableBody"), $("#expenseTotal"));
+  renderTallers(tallersList, $("#tallerTableBody"), $("#tallerTotal"));
+
+  // KPIs (resum)
+  const vendesTotal  = vendesList.reduce((a,e)=> a + (Number(e.total) || (Number(e.price)||0)*(Number(e.qty)||1)), 0);
+  const despTotal    = despList.reduce((a,e)=> a + (Number(e.price)||0), 0);
+  const tallersTotal = tallersList.reduce((a,e)=> a + (Number(e.total) || (Number(e.price)||0)*(Number(e.qty)||1)), 0);
 
   $("#sumIncome").textContent  = fmtEUR(vendesTotal + tallersTotal);
-  $("#sumExpense").textContent = fmtEUR(despesesTotal);
-  $("#sumBalance").textContent = fmtEUR((vendesTotal + tallersTotal) - despesesTotal);
+  $("#sumExpense").textContent = fmtEUR(despTotal);
+  $("#sumBalance").textContent = fmtEUR((vendesTotal + tallersTotal) - despTotal);
 
-  document.getElementById("incomeChip").textContent  = fmtEUR(vendesTotal);
-  document.getElementById("expenseChip").textContent = fmtEUR(despesesTotal);
-  document.getElementById("tallerChip") && (document.getElementById("tallerChip").textContent = fmtEUR(tallersTotal)); // ✅
+  $("#incomeChip").textContent  = fmtEUR(vendesTotal);
+  $("#expenseChip").textContent = fmtEUR(despTotal);
+  $("#tallerChip").textContent  = fmtEUR(tallersTotal);
 
-  // dates per defecte dins el mes actiu
-  const d = dateInsideActiveMonth(m);
-  $("#incomeDate").value  = toDateInput(d);
-  $("#expenseDate").value = toDateInput(d);
-  $("#tallerDate") && ($("#tallerDate").value = toDateInput(d)); // ✅
-
-  // header picker + any export
-  $("#activeMonthPicker").value = m;
-  const yrBadge = document.getElementById("exportYearBadge");
-  if (yrBadge) { const [yr] = m.split("-"); yrBadge.textContent = `ANY ${yr}`; }
-
-  const label = document.getElementById("activeMonthLabel");
-  if (label) label.textContent = formatMonth(m);
+  // (opcional però bé) refresca fletxes d’ordre
+  if (typeof updateSortIcons === "function") updateSortIcons();
 }
+
 
 // ---- Subscripcions ----
 function subscribeTemplates(){
@@ -390,6 +451,55 @@ nextBtn.addEventListener("click", ()=>shiftMonth(+1));
   const d = dateInsideActiveMonth(state.activeMonth);
   $("#incomeDate").value  = toDateInput(d);
   $("#expenseDate").value = toDateInput(d);
+  // DESPESES: avís si Import − IVA ≠ Base (no bloqueja)
+const expImport = document.getElementById("expensePrice");
+const expIva    = document.getElementById("expenseIVA");
+const expBase   = document.getElementById("expenseBase");
+const expWarn   = document.getElementById("expenseMathWarn");
+
+function checkExpenseMathWarn(){
+  if (!expImport || !expIva || !expBase || !expWarn) return;
+
+  const hasImp  = expImport.value !== "";
+  const hasIva  = expIva.value !== "";
+  const hasBase = expBase.value !== "";
+
+  // només avisem quan hi ha els 3 valors (si et va millor avisar amb 2, m’ho dius)
+  if (!(hasImp && hasIva && hasBase)){
+    expWarn.textContent = "";
+    expWarn.style.display = "none";
+    return;
+  }
+
+  const imp  = Number(expImport.value);
+  const iva  = Number(expIva.value);
+  const base = Number(expBase.value);
+
+  if ([imp, iva, base].some(n => Number.isNaN(n))){
+    expWarn.textContent = "";
+    expWarn.style.display = "none";
+    return;
+  }
+
+  const expected = imp - iva;
+  const diff = base - expected;
+
+  if (Math.abs(diff) > 0.01){
+    expWarn.textContent =
+      `Avís: Import (${fmtEUR(imp)}) − IVA (${fmtEUR(iva)}) = ${fmtEUR(expected)}, però Base = ${fmtEUR(base)}.`;
+    expWarn.style.display = "block";
+    expWarn.classList.add("warn");
+  } else {
+    expWarn.textContent = "";
+    expWarn.style.display = "none";
+  }
+}
+
+expImport.addEventListener("input", checkExpenseMathWarn);
+expIva.addEventListener("input", checkExpenseMathWarn);
+expBase.addEventListener("input", checkExpenseMathWarn);
+checkExpenseMathWarn();
+
   // VENDES: total = preu * quantitat
 const salePrice = $("#incomePrice");
 const saleQty   = $("#saleQty");
@@ -401,22 +511,11 @@ function recomputeSaleTotal(){
 salePrice?.addEventListener("input", recomputeSaleTotal);
 saleQty?.addEventListener("input", recomputeSaleTotal);
 recomputeSaleTotal();
-// DESPESES: Base = Import - IVA (en directe)
-const expImport = $("#expensePrice");
-const expIVA    = $("#expenseIVA");
-const expBase   = $("#expenseBase");
-function recomputeBase(){
-  const imp = Number(expImport?.value||0);
-  const iva = Number(expIVA?.value||0);
-  if (expBase) expBase.value = fmtEUR(Math.max(imp - iva, 0));
-}
-expImport?.addEventListener("input", recomputeBase);
-expIVA?.addEventListener("input", recomputeBase);
-recomputeBase();
+
 // TALLERS: Total = preu * quantitat (en directe)
 const talPrice = $("#tallerPrice");
 const talQty   = $("#tallerQty");
-const talTotal = $("#tallerTotal");
+const talTotal = $("#tallerTotalCalc");
 function recomputeTallerTotal(){
   const p = Number(talPrice?.value || 0);
   const q = Number(talQty?.value   || 1);
@@ -586,17 +685,20 @@ $("#expenseForm")?.addEventListener("submit", async (ev)=>{
   const dateEl    = $("#expenseDate");
   const notesEl   = $("#expenseNotes");
 
-  // Si falta algun element, no petem: avisem
-  if (!companyEl || !priceEl || !ivaEl || !dateEl || !notesEl){
-    console.error("Falten camps del formulari de despeses", { companyEl, priceEl, ivaEl, dateEl, notesEl });
+  if (!companyEl || !priceEl || !ivaEl || !baseEl || !dateEl || !notesEl){
+    console.error("Falten camps del formulari de despeses", { companyEl, priceEl, ivaEl, baseEl, dateEl, notesEl });
     toast("Error: falta algun camp del formulari de despeses a l'HTML");
     return;
   }
 
-  const title = companyEl.value.trim();        // "Empresa/Concepte" (guardem a 'title' per compatibilitat)
+  const title = companyEl.value.trim();
   const price = Number(priceEl.value || 0);
   const iva   = Number(ivaEl.value   || 0);
-  const base  = Math.max(price - iva, 0);
+
+  // ✅ Base manual (si la deixes buida, fem fallback a import-iva)
+  const base  = (baseEl.value !== "")
+    ? Number(baseEl.value || 0)
+    : Math.max(price - iva, 0);
 
   const dateStr = dateEl.value;
   if (!title || !dateStr) return;
@@ -616,19 +718,19 @@ $("#expenseForm")?.addEventListener("submit", async (ev)=>{
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  // RESET + deixar data dins del mes actiu + base recalculada
   $("#expenseForm").reset();
   $("#expenseDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
-  if (baseEl) baseEl.value = fmtEUR(0);
+  // ✅ no formategem amb € perquè ara és input number
+  baseEl.value = "";
 
   toast("Despesa desada");
 
-  // al mòbil, plega la secció després de desar (els teus IDs actuals)
   if (window.matchMedia("(max-width:700px)").matches){
     document.getElementById("expenseCollapsible")?.classList.remove("open");
     document.getElementById("expenseSectionToggle")?.classList.remove("expanded");
   }
 });
+
 
   $("#tallerForm")?.addEventListener("submit", async (ev)=>{
   ev.preventDefault();
@@ -653,7 +755,7 @@ $("#expenseForm")?.addEventListener("submit", async (ev)=>{
 (function(){
   const talPrice = $("#tallerPrice");
   const talQty   = $("#tallerQty");
-  const talTotal = $("#tallerTotal");
+  const talTotal = $("#tallerTotalCalc");
   const recomputeTallerTotal = ()=>{
     const p = Number(talPrice?.value || 0);
     const q = Number(talQty?.value   || 1);
@@ -875,59 +977,66 @@ async function saveTemplate(ev){
 function applyTemplateToForm(tpl, type){
   const when = toDateInput(dateInsideActiveMonth(state.activeMonth));
 
-  if (type === 'ingres'){           // VENDES
+  const toFixedOrEmpty = (v)=>{
+    if (v === null || v === undefined || v === "") return "";
+    const n = Number(v);
+    if (Number.isNaN(n)) return "";
+    return n.toFixed(2);
+  };
+
+  if (type === 'ingres'){ // VENDES
     goToView('ingressos');
 
-    // obre el desplegable de la secció
-    $('#incomeCollapsible')?.classList.add('open');
-    $('#incomeSectionToggle')?.classList.add('expanded');
+    document.getElementById('incomeCollapsible')?.classList.add('open');
+    document.getElementById('incomeSectionToggle')?.classList.add('expanded');
 
-    // data per defecte dins mes actiu
-    $('#incomeDate').value = when;
+    document.getElementById('incomeDate').value = when;
 
-    // camps preomplerts
-    $('#salePiece').value   = tpl.piece  || tpl.title || '';
-    $('#saleClay').value    = tpl.clay   || '';
-    $('#saleDesign').value  = tpl.design || '';
-    if (tpl.saleType) $('#saleType').value = tpl.saleType;
+    document.getElementById('salePiece').value  = tpl.piece  || tpl.title || '';
+    document.getElementById('saleClay').value   = tpl.clay   || '';
+    document.getElementById('saleDesign').value = tpl.design || '';
+    if (tpl.saleType) document.getElementById('saleType').value = tpl.saleType;
 
-    if (typeof tpl.defaultPrice === 'number'){
-      $('#incomePrice').value = tpl.defaultPrice;
+    if (tpl.defaultPrice !== undefined){
+      document.getElementById('incomePrice').value = toFixedOrEmpty(tpl.defaultPrice);
     }
 
-    // recalcular total automàtic
-    const p = Number($('#incomePrice').value || 0);
-    const q = Number($('#saleQty').value || 1);
-    const saleTotal = $('#saleTotal');
-    if (saleTotal) saleTotal.value = fmtEUR(p*q);
+    // recalcula total venda (preu * quantitat)
+    const p = Number(document.getElementById('incomePrice').value || 0);
+    const q = Number(document.getElementById('saleQty').value || 1);
+    const out = document.getElementById('saleTotal');
+    if (out) out.value = fmtEUR(p*q);
 
-    $('#incomeNotes')?.focus();
+    document.getElementById('incomeNotes')?.focus();
     toast('Plantilla carregada al formulari de vendes');
+    return;
   }
 
-  else if (type === 'despesa'){     // DESPESES
+  if (type === 'despesa'){ // DESPESES
     goToView('despeses');
 
-    $('#expenseCollapsible')?.classList.add('open');
-    $('#expenseSectionToggle')?.classList.add('expanded');
+    document.getElementById('expenseCollapsible')?.classList.add('open');
+    document.getElementById('expenseSectionToggle')?.classList.add('expanded');
 
-    $('#expenseDate').value = when;
-    $('#expenseCompany').value = tpl.title || '';          // a despeses fem servir 'Empresa/Concepte'
-    if (typeof tpl.defaultPrice === 'number'){
-      $('#expensePrice').value = tpl.defaultPrice;
+    document.getElementById('expenseDate').value = when;
+    document.getElementById('expenseCompany').value = tpl.title || '';
+
+    if (tpl.defaultPrice !== undefined){
+      document.getElementById('expensePrice').value = toFixedOrEmpty(tpl.defaultPrice);
     }
 
-    // recalcula base (Import - IVA)
-    const recomputeBase = ()=>{
-      const imp = Number($('#expensePrice').value || 0);
-      const iv  = Number($('#expenseIVA').value   || 0);
-      const base= Math.max(imp - iv, 0);
-      const out = $('#expenseBase'); if (out) out.value = fmtEUR(base);
-    };
-    recomputeBase();
+    // No auto-calculis la Base: la deixem buida o la que vingui a la plantilla
+    if (tpl.iva !== undefined)  document.getElementById('expenseIVA').value  = toFixedOrEmpty(tpl.iva);
+    if (tpl.base !== undefined) document.getElementById('expenseBase').value = toFixedOrEmpty(tpl.base);
 
-    $('#expenseNotes')?.focus();
+    // força recalcular l'avís (si tens el listener d'input)
+    document.getElementById('expensePrice')?.dispatchEvent(new Event("input",{bubbles:true}));
+    document.getElementById('expenseIVA')?.dispatchEvent(new Event("input",{bubbles:true}));
+    document.getElementById('expenseBase')?.dispatchEvent(new Event("input",{bubbles:true}));
+
+    document.getElementById('expenseNotes')?.focus();
     toast('Plantilla carregada al formulari de despeses');
+    return;
   }
 }
 
@@ -974,20 +1083,25 @@ async function editEntry(it){
     toast("Venda actualitzada");
   }
 
-  else if (kind === "despesa-entry"){
-    const title = ask("Empresa / Concepte:", it.title || "");
-    const price = Number(ask("Import total (€):", it.price ?? 0)) || 0;
-    const iva   = Number(ask("IVA (€):", it.iva ?? 0)) || 0;
-    const base  = Math.max(price - iva, 0);
-    const notes = ask("Notes:", it.notes || "");
+else if (kind === "despesa-entry"){
+  const title = ask("Empresa / Concepte:", it.title || "");
+  const price = Number(ask("Import total (€):", it.price ?? 0)) || 0;
+  const iva   = Number(ask("IVA (€):", it.iva ?? 0)) || 0;
 
-    await docRef.update({
-      title, price, iva, base, notes,
-      date: firebase.firestore.Timestamp.fromDate(newDate),
-      monthKey: yyyyMM(newDate)
-    });
-    toast("Despesa actualitzada");
-  }
+  // ✅ base editable; fallback a import-iva si registre antic no la tenia
+  const baseDefault = (it.base != null) ? it.base : Math.max(price - iva, 0);
+  const base  = Number(ask("Base (€):", baseDefault)) || 0;
+
+  const notes = ask("Notes:", it.notes || "");
+
+  await docRef.update({
+    title, price, iva, base, notes,
+    date: firebase.firestore.Timestamp.fromDate(newDate),
+    monthKey: yyyyMM(newDate)
+  });
+  toast("Despesa actualitzada");
+}
+
 
   else if (kind === "taller-entry"){
     const ttype = ask("Tipus de taller (setmanal / dissabtes / casal / nens):", it.tallerType || "setmanal");
@@ -1157,6 +1271,7 @@ async function init(){
   setupNav();
   setupForms();
   setupMobileMenu();
+  setupDateSortButtons();
 
   // Oculta la UI principal fins a login
 document.querySelector("main.container").style.display = "none";
