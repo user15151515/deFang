@@ -758,41 +758,80 @@ $("#expenseForm")?.addEventListener("submit", async (ev)=>{
 });
 
 
-  $("#tallerForm")?.addEventListener("submit", async (ev)=>{
+$("#tallerForm")?.addEventListener("submit", async (ev)=>{
   ev.preventDefault();
-  const dateStr = $("#tallerDate").value;
-  const tallerType = $("#tallerType").value || "setmanal";
-  const price = Number($("#tallerPrice").value||0);
-  const qty   = Number($("#tallerQty").value||1);
+
+  const dateEl  = document.getElementById("tallerDate");
+  const typeSel = document.getElementById("tallerType");
+  const typeCus = document.getElementById("tallerTypeCustom");
+  const priceEl = document.getElementById("tallerPrice");
+  const qtyEl   = document.getElementById("tallerQty");
+
+  const dateStr = dateEl?.value || "";
   if (!dateStr) return;
   const date = new Date(dateStr);
+
+  // agafa tipus (select o custom)
+  let type = (typeSel?.value || "setmanal").trim();
+  if (type === "__custom__") {
+    type = (typeCus?.value || "").trim();
+  }
+  if (!type) {
+    toast("Escriu un tipus de taller");
+    return;
+  }
+
+  const price = Number(priceEl?.value || 0);
+  const qty   = Number(qtyEl?.value || 1);
+  const total = price * qty;
+
   await itemsCol.add({
     kind: "taller-entry",
-    tallerType, price, qty, total: price*qty,
+    tallerType: type,                 // ✅ STRING, no element HTML
+    price,
+    qty,
+    total,
     date: firebase.firestore.Timestamp.fromDate(date),
     monthKey: yyyyMM(date),
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
-  $("#tallerForm").reset();
-  $("#tallerDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
+
+  // reset
+  document.getElementById("tallerForm")?.reset();
+  document.getElementById("tallerDate").value = toDateInput(dateInsideActiveMonth(state.activeMonth));
+
+  // torna a deixar el custom amagat
+  const tallerTypeCustomRow = document.getElementById("tallerTypeCustomRow");
+  if (tallerTypeCustomRow) tallerTypeCustomRow.style.display = "none";
+  if (typeSel) typeSel.value = "setmanal";
+  if (typeCus) typeCus.value = "";
+
+  // recalcula el total a 0,00 €
+  const talTotal = document.getElementById("tallerTotalCalc");
+  if (talTotal) talTotal.value = fmtEUR(0);
+
   toast("Taller desat");
 
-  // Recalcula el total a 0,00 € després del reset
-(function(){
-  const talPrice = $("#tallerPrice");
-  const talQty   = $("#tallerQty");
-  const talTotal = $("#tallerTotalCalc");
-  const recomputeTallerTotal = ()=>{
-    const p = Number(talPrice?.value || 0);
-    const q = Number(talQty?.value   || 1);
-    if (talTotal) talTotal.value = fmtEUR(p*q);
-  };
-  talPrice?.addEventListener("input", recomputeTallerTotal, { once:true });
-  talQty?.addEventListener("input",  recomputeTallerTotal, { once:true });
-  recomputeTallerTotal();
-})();
-
+  // (si vols) plegar al mòbil després de desar:
+  if (window.matchMedia("(max-width:700px)").matches){
+    document.getElementById("tallerCollapsible")?.classList.remove("open");
+    document.getElementById("tallerSectionToggle")?.classList.remove("expanded");
+  }
 });
+
+// TALLERS: opció "Personalitzat…" (mostra input quan cal)
+const tallerTypeSel = document.getElementById("tallerType");
+const tallerTypeCustomRow = document.getElementById("tallerTypeCustomRow");
+const tallerTypeCustomInp = document.getElementById("tallerTypeCustom");
+
+function syncTallerTypeCustomUI(){
+  const isCustom = tallerTypeSel && tallerTypeSel.value === "__custom__";
+  if (tallerTypeCustomRow) tallerTypeCustomRow.style.display = isCustom ? "grid" : "none";
+  if (!isCustom && tallerTypeCustomInp) tallerTypeCustomInp.value = "";
+}
+
+tallerTypeSel?.addEventListener("change", syncTallerTypeCustomUI);
+syncTallerTypeCustomUI();
 
   // Nova plantilla
   $("#openIncomeTpl").addEventListener("click",()=>openTplDialog("ingres"));
