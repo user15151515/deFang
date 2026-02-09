@@ -22,8 +22,14 @@ const PKG_ID = "defang";
 const itemsCol = db.collection("packages").doc(PKG_ID).collection("items");
 
 // ---- Utils ----
-const $  = (s) => document.querySelector(s);
-const $$ = (s) => Array.from(document.querySelectorAll(s));
+const $ = (q) => {
+  if (!q) return null;
+  const isSelector = q[0] === "#" || q[0] === "." || q.includes(" ") || q.includes("[") || q.includes(":") || q.includes(">") || q.includes("+") || q.includes("~");
+  return isSelector ? document.querySelector(q) : document.getElementById(q);
+};
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+
 
 const fmtEUR = (n) =>
   (n ?? 0).toLocaleString("ca-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -98,7 +104,7 @@ function setupDateSortButtons(){
 }
 
 // ---- Estat ----
-let unsub = { incomeTpl:null, expenseTpl:null, incomeEntries:null, expenseEntries:null };
+let unsub = { incomeTpl:null, expenseTpl:null, incomeEntries:null, expenseEntries:null, tallerEntries:null };
 const state = {
   activeMonth: yyyyMM(new Date()),
   incomeEntries: [],
@@ -337,44 +343,62 @@ function renderEntries(list, tbodyEl, totalEl, opts = {}) {
 
   totalEl.textContent = fmtEUR(total);
 }
+
 function renderAllForActiveMonth(){
   const key = state.activeMonth;
+  // Xip del header + input month sincronitzats
+  const labelBtn = $("activeMonthLabel");
+  if (labelBtn) labelBtn.textContent = formatMonth(key);
 
-  // Header / labels
-  const monthLabel = formatMonth(key);
-  $("#activeMonthLabel").textContent = monthLabel;
-  $("#activeMonthPicker").value = key;
+  const picker = $("activeMonthPicker");
+  if (picker) picker.value = key;
 
-  $("#monthSummaryText").textContent = monthLabel;
-  $("#monthIncomeText").textContent  = monthLabel;
-  $("#monthExpenseText").textContent = monthLabel;
-  $("#monthTallerText").textContent  = monthLabel;
 
-  // Filtra per mes i ORDENA segons estat
-  const vendesList  = sortByDate(state.incomeEntries.filter(e=>e.monthKey===key),  state.sortDir.income);
-  const despList    = sortByDate(state.expenseEntries.filter(e=>e.monthKey===key), state.sortDir.expense);
-  const tallersList = sortByDate(state.tallerEntries.filter(e=>e.monthKey===key),  state.sortDir.taller);
+  // Textos de mes (capçalera i seccions)
+  const pretty = formatMonth(key);
+  const ms = $("#monthSummaryText"); if (ms) ms.textContent = pretty;
+  const mi = $("#monthIncomeText");  if (mi) mi.textContent = pretty;
+  const me = $("#monthExpenseText"); if (me) me.textContent = pretty;
+  const mt = $("#monthTallerText");  if (mt) mt.textContent = pretty;
 
-  // Render taules (✅ IMPORTANT: abans era renderIncome i NO existeix)
-  renderSales(vendesList,   $("#incomeTableBody"),  $("#incomeTotal"));
-  renderExpenses(despList,  $("#expenseTableBody"), $("#expenseTotal"));
-  renderTallers(tallersList, $("#tallerTableBody"), $("#tallerTotal"));
+  // UI del selector + xip ANY
+  if (typeof updateMonthUI === "function") updateMonthUI();
+  updateExportYearBadge();
 
-  // KPIs (resum)
-  const vendesTotal  = vendesList.reduce((a,e)=> a + (Number(e.total) || (Number(e.price)||0)*(Number(e.qty)||1)), 0);
-  const despTotal    = despList.reduce((a,e)=> a + (Number(e.price)||0), 0);
-  const tallersTotal = tallersList.reduce((a,e)=> a + (Number(e.total) || (Number(e.price)||0)*(Number(e.qty)||1)), 0);
+  // Llistes del mes actiu
+  const vendesList   = state.incomeEntries.filter(e => e.monthKey === key);
+  const despesesList = state.expenseEntries.filter(e => e.monthKey === key);
+  const tallersList  = (state.tallerEntries || []).filter(e => e.monthKey === key);
 
-  $("#sumIncome").textContent  = fmtEUR(vendesTotal + tallersTotal);
-  $("#sumExpense").textContent = fmtEUR(despTotal);
-  $("#sumBalance").textContent = fmtEUR((vendesTotal + tallersTotal) - despTotal);
+  // Taules + totals (xips/ KPIs)
+  renderSales(vendesList, $("#incomeTableBody"), $("#incomeTotal"));
+  renderExpenses(despesesList, $("#expenseTableBody"), $("#expenseTotal"));
+  if (typeof renderTallers === "function"){
+    renderTallers(tallersList, $("#tallerTableBody"), $("#tallerTotal"));
+  }
 
-  $("#incomeChip").textContent  = fmtEUR(vendesTotal);
-  $("#expenseChip").textContent = fmtEUR(despTotal);
-  $("#tallerChip").textContent  = fmtEUR(tallersTotal);
+  // Resum mensual (Ingressos = Vendes + Tallers)
+  const sumVendes  = vendesList.reduce((s,e)=> s + (Number(e.total) || (Number(e.price)||0)*(Number(e.qty)||1)), 0);
+  const sumTallers = tallersList.reduce((s,e)=> s + (Number(e.total) || (Number(e.price)||0)*(Number(e.qty)||1)), 0);
+  const sumExp     = despesesList.reduce((s,e)=> s + (Number(e.price)||0), 0);
+  const sumInc     = sumVendes + sumTallers;
 
-  // (opcional però bé) refresca fletxes d’ordre
-  if (typeof updateSortIcons === "function") updateSortIcons();
+  const si = $("#sumIncome");   if (si) si.textContent = fmtEUR(sumInc);
+  const se = $("#sumExpense");  if (se) se.textContent = fmtEUR(sumExp);
+  const sb = $("#sumBalance");  if (sb) sb.textContent = fmtEUR(sumInc - sumExp);
+
+  // Xips totals de secció (si els tens)
+  const incChip = $("#incomeChip");  if (incChip) incChip.textContent = fmtEUR(sumVendes);
+  const expChip = $("#expenseChip"); if (expChip) expChip.textContent = fmtEUR(sumExp);
+  const talChip = $("#tallerChip");  if (talChip) talChip.textContent = fmtEUR(sumTallers);
+}
+
+function updateExportYearBadge(){
+  const badge = $("#exportYearBadge");
+  if (!badge) return;
+  const ym = state.activeMonth || yyyyMM(new Date());
+  const yr = ym.split("-")[0];
+  badge.textContent = `ANY ${yr}`;
 }
 
 
@@ -426,6 +450,7 @@ function setupForms(){
   $("#activeMonthPicker").addEventListener("change",(e)=>{
 
     state.activeMonth = e.target.value;
+    updateExportYearBadge();
     renderAllForActiveMonth();   // <-- tot es recalcula
   });
 // millora UI selector de mes (fletxes + etiqueta clicable)
@@ -437,6 +462,7 @@ function shiftMonth(delta){
   const [y,m] = state.activeMonth.split("-").map(Number);
   const d = new Date(y, m - 1 + delta, 1);
   state.activeMonth = yyyyMM(d);
+  updateExportYearBadge();
   renderAllForActiveMonth();
 }
 
@@ -1296,11 +1322,12 @@ auth.onAuthStateChanged((user)=>{
     if (unsub.expenseTpl) unsub.expenseTpl();
     if (unsub.incomeEntries) unsub.incomeEntries();
     if (unsub.expenseEntries) unsub.expenseEntries();
-    unsub = { incomeTpl:null, expenseTpl:null, incomeEntries:null, expenseEntries:null };
+    if (unsub.tallerEntries) unsub.tallerEntries();
+    unsub = { incomeTpl:null, expenseTpl:null, incomeEntries:null, expenseEntries:null, tallerEntries:null };
 
     // Buida estat visible
     state.incomeTpls = []; state.expenseTpls = [];
-    state.incomeEntries = []; state.expenseEntries = [];
+    state.incomeEntries = []; state.expenseEntries = []; state.tallerEntries = [];
     renderAllForActiveMonth();
 
     // Torna al login
