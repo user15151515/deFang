@@ -1104,7 +1104,7 @@ else if (kind === "despesa-entry"){
 
 
   else if (kind === "taller-entry"){
-    const ttype = ask("Tipus de taller (setmanal / dissabtes / casal / nens):", it.tallerType || "setmanal");
+    const ttype = ask("Tipus de taller (setmanal / dissabtes / casal / puntual / val regal):", it.tallerType || "setmanal");
     const price = Number(ask("Preu (€):", it.price ?? 0)) || 0;
     const qty   = Number(ask("Quantitat:", it.qty ?? 1)) || 1;
     const total = price * qty;
